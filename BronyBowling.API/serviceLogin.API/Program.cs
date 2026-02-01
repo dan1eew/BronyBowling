@@ -1,26 +1,27 @@
+using BronyBowling.Shared.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using serviceLogin.API.Data;
 using serviceLogin.API.DTOs;
 using serviceLogin.API.Models;
 using serviceLogin.API.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using BronyBowling.Shared.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// -------------------- SERVICES --------------------
+
+builder.Services.AddDbContext<ApplicationDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddScoped<PasswordHasher>();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddAuthorization();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    .AddJwtBearer(opt =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        opt.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidIssuer = AuthOptions.ISSUER,
@@ -30,46 +31,45 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
             ValidateLifetime = true,
 
-            IssuerSigningKey = AuthOptions.GetSymmetricSecurityKey(),
-            ValidateIssuerSigningKey = true
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = AuthOptions.SecurityKey
         };
     });
-builder.Services.AddCors(options =>
+
+builder.Services.AddAuthorization();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(opt =>
 {
-    options.AddDefaultPolicy(policy =>
-    {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
+    opt.AddDefaultPolicy(p =>
+      p.AllowAnyOrigin() .AllowAnyHeader() .AllowAnyMethod());
 });
 
 var app = builder.Build();
 
+// -------------------- MIDDLEWARE --------------------
+
+app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// -------------------- ENDPOINTS --------------------
+
 app.MapPost("/register", async (
     RegisterRequest request,
     ApplicationDbContext db,
     PasswordHasher hasher) =>
 {
-    // базовая валидация
     if (string.IsNullOrWhiteSpace(request.PhoneNumber)
         || string.IsNullOrWhiteSpace(request.Password)
         || string.IsNullOrWhiteSpace(request.FullName))
-    {
-        return Results.BadRequest("Обязательные поля не заполнены");
-    }
+        return Results.BadRequest("Заполните обязательные поля");
 
-    var exists = await db.Users
-        .AnyAsync(u => u.PhoneNumber == request.PhoneNumber);
-
-    if (exists)
+    if (await db.Users.AnyAsync(x => x.PhoneNumber == request.PhoneNumber))
         return Results.BadRequest("Пользователь уже существует");
 
     var user = new User
@@ -78,15 +78,16 @@ app.MapPost("/register", async (
         PhoneNumber = request.PhoneNumber,
         PasswordHash = hasher.Hash(request.Password),
         FullName = request.FullName,
-        BirthDate = request.BirthDate, 
-        City = request.City             
+        BirthDate = request.BirthDate,
+        City = request.City,
+        CreatedAt = DateTime.UtcNow
     };
 
     db.Users.Add(user);
     await db.SaveChangesAsync();
 
     return Results.Ok();
-}); // Register
+}); // register
 
 app.MapPost("/login", async (
     LoginRequest request,
@@ -94,12 +95,9 @@ app.MapPost("/login", async (
     PasswordHasher hasher) =>
 {
     var user = await db.Users
-        .FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
+        .FirstOrDefaultAsync(x => x.PhoneNumber == request.PhoneNumber);
 
-    if (user is null)
-        return Results.Unauthorized();
-
-    if (!hasher.Verify(request.Password, user.PasswordHash))
+    if (user is null || !hasher.Verify(request.Password, user.PasswordHash))
         return Results.Unauthorized();
 
     var claims = new[]
@@ -108,19 +106,17 @@ app.MapPost("/login", async (
         new Claim(ClaimTypes.Name, user.PhoneNumber)
     };
 
-    var jwt = new JwtSecurityToken(
-    issuer: AuthOptions.ISSUER,
-    audience: AuthOptions.AUDIENCE,
-    claims: claims,
-    expires: DateTime.UtcNow.AddHours(1),
-    signingCredentials: new SigningCredentials(
-        AuthOptions.GetSymmetricSecurityKey(),
-        SecurityAlgorithms.HmacSha256)
-);
-
-    var token = new JwtSecurityTokenHandler().WriteToken(jwt);
+    var token = new JwtSecurityTokenHandler().WriteToken(
+        new JwtSecurityToken(
+            issuer: AuthOptions.ISSUER,
+            audience: AuthOptions.AUDIENCE,
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials:
+                new SigningCredentials(AuthOptions.SecurityKey, SecurityAlgorithms.HmacSha256)
+        ));
 
     return Results.Ok(new { token });
-}); // Login
+}); // login
 
 app.Run();
