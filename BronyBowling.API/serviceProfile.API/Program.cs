@@ -1,23 +1,22 @@
-using serviceProfile.API.DTOs;
-using System.Security.Claims;
+using BronyBowling.Shared.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using BronyBowling.Shared.Auth;
-using serviceLogin.API.Data;
+using serviceProfile.API.Data;
+using serviceProfile.API.DTOs;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddAuthorization();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// -------------------- SERVICES --------------------
+
+builder.Services.AddDbContext<ProfileDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    .AddJwtBearer(opt =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        opt.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidIssuer = AuthOptions.ISSUER,
@@ -27,98 +26,99 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
             ValidateLifetime = true,
 
-            IssuerSigningKey = AuthOptions.GetSymmetricSecurityKey(),
-            ValidateIssuerSigningKey = true
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = AuthOptions.SecurityKey
         };
     });
-builder.Services.AddCors(options =>
+
+builder.Services.AddAuthorization();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddCors(opt =>
 {
-    options.AddDefaultPolicy(policy =>
-    {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
+    opt.AddDefaultPolicy(p =>
+        p.AllowAnyOrigin()
+         .AllowAnyHeader()
+         .AllowAnyMethod());
 });
 
 var app = builder.Build();
 
+// -------------------- MIDDLEWARE --------------------
+
+app.UseHttpsRedirection();
 app.UseCors();
-app.UseSwagger();
-app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// -------------------- ENDPOINTS --------------------
 
 app.MapGet("/profile", async (
-    ClaimsPrincipal userClaims,
-    ApplicationDbContext db) =>
+    ClaimsPrincipal user,
+    ProfileDbContext db) =>
 {
     var userId = Guid.Parse(
-        userClaims.FindFirstValue(ClaimTypes.NameIdentifier)!
+        user.FindFirstValue(ClaimTypes.NameIdentifier)!
     );
 
-    var user = await db.Users.FindAsync(userId);
+    var entity = await db.Users.FindAsync(userId);
 
-    if (user is null)
+    if (entity is null)
         return Results.NotFound();
 
     return Results.Ok(new ProfileResponse
     {
-        PhoneNumber = user.PhoneNumber,
-        FullName = user.FullName,
-        BirthDate = user.BirthDate,
-        City = user.City
+        PhoneNumber = entity.PhoneNumber,
+        FullName = entity.FullName,
+        BirthDate = entity.BirthDate,
+        City = entity.City
     });
-})
+}) // profile
 .RequireAuthorization();
-// GET /profile
 
 app.MapPut("/profile", async (
     UpdateProfileRequest request,
-    ClaimsPrincipal userClaims,
-    ApplicationDbContext db) =>
+    ClaimsPrincipal user,
+    ProfileDbContext db) =>
 {
     var userId = Guid.Parse(
-        userClaims.FindFirstValue(ClaimTypes.NameIdentifier)!
+        user.FindFirstValue(ClaimTypes.NameIdentifier)!
     );
 
-    var user = await db.Users.FindAsync(userId);
+    var entity = await db.Users.FindAsync(userId);
 
-    if (user is null)
+    if (entity is null)
         return Results.NotFound();
 
-    user.FullName = request.FullName;
-
-    // если пользователь ввёл — обновляем
-    user.BirthDate = request.BirthDate;
-    user.City = request.City;
+    entity.FullName = request.FullName;
+    entity.BirthDate = request.BirthDate;
+    entity.City = request.City;
 
     await db.SaveChangesAsync();
-
     return Results.Ok();
-})
+}) // PUT profile
 .RequireAuthorization();
-// PUT /profile 
 
-app.MapDelete("/profile", [Authorize] async (
+app.MapDelete("/profile", async (
     ClaimsPrincipal user,
-    ApplicationDbContext db) =>
+    ProfileDbContext db) =>
 {
-    var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-    if (userIdClaim == null)
-        return Results.Unauthorized();
-
-    int userId = int.Parse(userIdClaim.Value);
+    var userId = Guid.Parse(
+        user.FindFirstValue(ClaimTypes.NameIdentifier)!
+    );
 
     var entity = await db.Users.FindAsync(userId);
-    if (entity == null)
+
+    if (entity is null)
         return Results.NotFound();
 
     db.Users.Remove(entity);
     await db.SaveChangesAsync();
 
     return Results.Ok("Профиль удалён");
-}); // DELETE /profile
+}) // DELETE profile
+.RequireAuthorization();
 
 app.Run();

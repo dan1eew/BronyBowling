@@ -1,4 +1,5 @@
 ﻿namespace serviceProfile.API.DTOs;
+
 public class UpdateProfileRequest
 {
     public string FullName { get; set; } = null!;

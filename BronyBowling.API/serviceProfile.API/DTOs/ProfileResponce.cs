@@ -1,4 +1,5 @@
 ﻿namespace serviceProfile.API.DTOs;
+
 public class ProfileResponse
 {
     public string PhoneNumber { get; set; } = null!;
