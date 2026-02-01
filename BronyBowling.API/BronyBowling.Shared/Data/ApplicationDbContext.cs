@@ -1,9 +1,10 @@
-﻿using serviceLogin.API.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using serviceLogin.API.Models;
 
 namespace serviceLogin.API.Data;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+           : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -12,33 +13,25 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.ToTable("users_table");
 
-            entity.HasKey(e => e.UserId);
+            entity.HasKey(x => x.UserId);
 
-            entity.Property(e => e.UserId)
-                .HasColumnName("UserId");
-
-            entity.Property(e => e.PhoneNumber)
-                .HasColumnName("PhoneNumber")
+            entity.Property(x => x.PhoneNumber)
                 .HasMaxLength(11)
                 .IsRequired();
 
-            entity.Property(e => e.PasswordHash)
-                .HasColumnName("PasswordHash")
+            entity.HasIndex(x => x.PhoneNumber)
+                .IsUnique();
+
+            entity.Property(x => x.PasswordHash)
                 .HasMaxLength(256)
                 .IsRequired();
 
-            entity.Property(e => e.FullName)
-                .HasColumnName("FullName")
+            entity.Property(x => x.FullName)
                 .HasMaxLength(150)
                 .IsRequired();
 
-            entity.Property(e => e.BirthDate)
-                .HasColumnName("BirthDate")
-                .IsRequired();
-
-            entity.Property(e => e.CreateAt)
-                .HasColumnName("CreatedAt")
-                .IsRequired();
+            entity.Property(x => x.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
         });
     }
 }
