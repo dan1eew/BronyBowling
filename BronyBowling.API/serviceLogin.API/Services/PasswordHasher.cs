@@ -3,17 +3,16 @@ using System.Text;
 
 namespace serviceLogin.API.Services;
 
-public class PasswordHasher
+/// <summary> Хеширование паролей </summary>
+public sealed class PasswordHasher
 {
     public string Hash(string password)
     {
         using var sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(bytes);
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        return Convert.ToBase64String(hash);
     }
 
     public bool Verify(string password, string hash)
-    {
-        return Hash(password) == hash;
-    }
+        => Hash(password) == hash;
 }
