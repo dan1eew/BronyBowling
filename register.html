@@ -1,0 +1,58 @@
+﻿<h2>Регистрация</h2>
+
+<input id="phone" placeholder="Телефон">
+<br>
+<br>
+<input id="password" type="password" placeholder="Пароль">
+<br>
+<br>
+<input id="fullName" placeholder="ФИО">
+<br>
+<br>
+
+<!-- необязательные -->
+<input id="birthDate" type="date">
+<br>
+<br>
+<input id="city" placeholder="Город">
+<br>
+<br>
+
+<button onclick="register()">Зарегистрироваться</button>
+
+<script>
+    async function register() {
+        const body = {
+            phoneNumber: phone.value,
+            password: password.value,
+            fullName: fullName.value,
+            birthDate: birthDate.value || null,
+            city: city.value || null
+        };
+
+        const response = await fetch("https://localhost:7001/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            alert("Ошибка регистрации");
+            return;
+        }
+
+        // автологин
+        const login = await fetch("https://localhost:7001/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                phoneNumber: body.phoneNumber,
+                password: body.password
+            })
+        });
+
+        const data = await login.json();
+        localStorage.setItem("token", data.token);
+        location.href = "profile.html";
+    }
+</script>
