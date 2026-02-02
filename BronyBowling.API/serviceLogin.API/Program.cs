@@ -10,6 +10,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
+bool IsValidPhone(string phone) => 
+     phone.Length == 11 && phone.All(char.IsDigit);
 
 // -------------------- SERVICES --------------------
 
@@ -66,18 +68,26 @@ app.MapPost("/register", async (
 {
     if (string.IsNullOrWhiteSpace(request.PhoneNumber)
         || string.IsNullOrWhiteSpace(request.Password)
-        || string.IsNullOrWhiteSpace(request.FullName))
+        || string.IsNullOrWhiteSpace(request.FirstName)
+        || string.IsNullOrWhiteSpace(request.LastName))
         return Results.BadRequest("Заполните обязательные поля");
 
     if (await db.Users.AnyAsync(x => x.PhoneNumber == request.PhoneNumber))
         return Results.BadRequest("Пользователь уже существует");
+
+    if (!IsValidPhone(request.PhoneNumber))
+        return Results.BadRequest("Номер телефон должен содержать 11 цифр");
+
+    var fullname = request.MiddleName is null
+        ? $"{request.LastName} {request.FirstName}"
+        : $"{request.LastName} {request.FirstName} {request.MiddleName}";
 
     var user = new User
     {
         UserId = Guid.NewGuid(),
         PhoneNumber = request.PhoneNumber,
         PasswordHash = hasher.Hash(request.Password),
-        FullName = request.FullName,
+        FullName = fullname,
         BirthDate = request.BirthDate,
         City = request.City,
         CreatedAt = DateTime.UtcNow
