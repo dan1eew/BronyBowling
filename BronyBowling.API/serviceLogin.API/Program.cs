@@ -52,6 +52,8 @@ var app = builder.Build();
 
 // -------------------- MIDDLEWARE --------------------
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();
