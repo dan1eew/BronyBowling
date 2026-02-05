@@ -9,6 +9,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<User> Users => Set<User>();
     protected override void OnModelCreating(ModelBuilder b)
     {
+        // ---------- USERS ----------
         b.Entity<User>(e =>
         {
             e.ToTable("users_table");
@@ -23,6 +24,28 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
             e.Property(x => x.City).HasMaxLength(100);
             e.Property(x => x.CreatedAt).IsRequired();
+        });
+
+        // ---------- BOWLING LANES ----------
+        b.Entity<BowlingLane>(e =>
+        {
+            e.ToTable("bowling_lanes");
+            e.HasKey(x => x.BowlingLanesId);
+
+            e.Property(x => x.Number).IsRequired();
+            e.Property(x => x.IsActive).IsRequired();
+        });
+
+        // ---------- BOOKINGS ----------
+        b.Entity<Booking>(e =>
+        {
+            e.ToTable("bookings");
+            e.HasKey(x => x.BookingId);
+
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.CreatedAt).IsRequired();
+
+            e.HasOne(x => x.Lane).WithMany().HasForeignKey(x => x.BookingId);
         });
     }
 }

@@ -1,7 +1,7 @@
 ﻿namespace BronyBowling.Shared.Models;
-public class BowlingLine
+public class BowlingLane
 {
-    public int BowlingId { get; set; }
+    public int BowlingLanesId { get; set; }
     public int Number { get; set; }
     public bool IsActive { get; set; }
 }
