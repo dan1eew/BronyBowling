@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль</title>
+</head>
+<body>
+
+    <h2>Профиль</h2>
+
+    <div id="info"></div>
+
+    <h3>Редактирование</h3>
+
+    <input id="lastName" placeholder="Фамилия"><br>
+    <input id="firstName" placeholder="Имя"><br>
+    <input id="middleName" placeholder="Отчество"><br>
+    <input id="birthDate" type="date"><br>
+    <input id="city" placeholder="Город"><br><br>
+
+    <button onclick="updateProfile()">Сохранить</button>
+    <button onclick="deleteProfile()" style="color:red">Удалить профиль</button>
+
+    <script>
+        const API_PROFILE_URL = "http://localhost:5272";
+        const token = localStorage.getItem("jwt");
+
+        if (!token) location.href = "login.html";
+
+        async function loadProfile() {
+            const r = await fetch(`${API_PROFILE_URL}/profile`, {
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            });
+
+            if (!r.ok) {
+                alert("Ошибка загрузки профиля");
+                return;
+            }
+
+            const p = await r.json();
+
+            document.getElementById("info").innerHTML = `
+                <p><b>Телефон:</b> ${p.phoneNumber}</p>
+                <p><b>ФИО:</b> ${p.lastName} ${p.firstName} ${p.middleName ?? ""}</p>
+            `;
+
+            lastName.value = p.lastName;
+            firstName.value = p.firstName;
+            middleName.value = p.middleName ?? "";
+            birthDate.value = p.birthDate?.split("T")[0] ?? "";
+            city.value = p.city ?? "";
+        }
+
+        async function updateProfile() {
+            const body = {
+                firstName: firstName.value.trim(),
+                lastName: lastName.value.trim(),
+                middleName: middleName.value.trim() || null,
+                birthDate: birthDate.value || null,
+                city: city.value.trim() || null
+            };
+
+            const r = await fetch(`${API_PROFILE_URL}/profile`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!r.ok) {
+                alert("Ошибка обновления профиля");
+                return;
+            }
+
+            alert("Профиль обновлён");
+            loadProfile();
+        }
+
+        async function deleteProfile() {
+            if (!confirm("Удалить профиль?")) return;
+
+            const r = await fetch(`${API_PROFILE_URL}/profile`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            });
+
+            if (!r.ok) {
+                alert("Ошибка удаления");
+                return;
+            }
+
+            localStorage.removeItem("jwt");
+            location.href = "login.html";
+        }
+
+        loadProfile();
+    </script>
+
+
+</body>
+</html>

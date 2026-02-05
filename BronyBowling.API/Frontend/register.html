@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация</title>
+</head>
+<body>
+
+    <h2>Регистрация</h2>
+
+    <input id="phone" placeholder="Телефон (11 цифр)"><br><br>
+    <input id="password" type="password" placeholder="Пароль"><br><br>
+
+    <input id="lastName" placeholder="Фамилия"><br><br>
+    <input id="firstName" placeholder="Имя"><br><br>
+    <input id="middleName" placeholder="Отчество (необязательно)"><br><br>
+
+    <input id="birthDate" type="date"><br><br>
+    <input id="city" placeholder="Город"><br><br>
+
+    <button onclick="register()">Зарегистрироваться</button>
+
+    <p id="error" style="color:red;"></p>
+
+    <script>async function register() {
+    const error = document.getElementById("error");
+    error.innerText = "";
+
+    const phone = phone.value.trim();
+    const password = password.value.trim();
+    const firstName = firstName.value.trim();
+    const lastName = lastName.value.trim();
+    const middleName = middleName.value.trim();
+
+    // --- Клиентская валидация ---
+    if (!/^\d{11}$/.test(phone)) {
+        error.innerText = "Телефон должен содержать 11 цифр";
+        return;
+    }
+
+    if (!password || !firstName || !lastName) {
+        error.innerText = "Заполните обязательные поля";
+        return;
+    }
+
+    const response = await fetch("https://localhost:7001/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            phoneNumber: phone,
+            password,
+            firstName,
+            lastName,
+            middleName: middleName || null,
+            birthDate: birthDate.value || null,
+            city: city.value || null
+        })
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        error.innerText = text;
+        return;
+    }
+
+    alert("Регистрация успешна");
+    window.location.href = "login.html";
+}</script>
+
+</body>
+</html>

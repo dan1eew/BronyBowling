@@ -1,37 +1,28 @@
-﻿using Microsoft.EntityFrameworkCore;
-using serviceLogin.API.Models;
+﻿using BronyBowling.Shared.Models;
+using Microsoft.EntityFrameworkCore;
 
-namespace serviceLogin.API.Data;
+namespace BronyBowling.Shared.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
            : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder b)
     {
-        modelBuilder.Entity<User>(entity =>
+        b.Entity<User>(e =>
         {
-            entity.ToTable("users_table");
+            e.ToTable("users_table");
+            e.HasKey(x => x.UserId);
 
-            entity.HasKey(x => x.UserId);
+            e.Property(x => x.PhoneNumber).HasMaxLength(11).IsRequired();
+            e.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
 
-            entity.Property(x => x.PhoneNumber)
-                .HasMaxLength(11)
-                .IsRequired();
+            e.Property(x => x.FirstName).HasMaxLength(50).IsRequired();
+            e.Property(x => x.LastName).HasMaxLength(50).IsRequired();
+            e.Property(x => x.MiddleName).HasMaxLength(50);
 
-            entity.HasIndex(x => x.PhoneNumber)
-                .IsUnique();
-
-            entity.Property(x => x.PasswordHash)
-                .HasMaxLength(256)
-                .IsRequired();
-
-            entity.Property(x => x.FullName)
-                .HasMaxLength(150)
-                .IsRequired();
-
-            entity.Property(x => x.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+            e.Property(x => x.City).HasMaxLength(100);
+            e.Property(x => x.CreatedAt).IsRequired();
         });
     }
 }

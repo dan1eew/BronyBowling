@@ -1,9 +1,4 @@
 <Solution>
-  <Folder Name="/Frontend/">
-    <File Path="login.html" />
-    <File Path="profile.html" />
-    <File Path="register.html" />
-  </Folder>
   <Project Path="BronyBowling.Shared/BronyBowling.Shared.csproj" Id="c0c03ec1-82d9-47b2-9daa-8526ce4744e7" />
   <Project Path="serviceLogin.API/serviceLogin.API.csproj" />
   <Project Path="serviceProfile.API/serviceProfile.API.csproj" Id="56cd77ad-d86e-4353-8c38-b628dec8b9cc" />
