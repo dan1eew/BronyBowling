@@ -1,10 +1,10 @@
 using BronyBowling.Shared.Auth;
+using BronyBowling.Shared.Data;
+using BronyBowling.Shared.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using serviceLogin.API.Data;
 using serviceLogin.API.DTOs;
-using serviceLogin.API.Models;
 using serviceLogin.API.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -89,7 +89,9 @@ app.MapPost("/register", async (
         UserId = Guid.NewGuid(),
         PhoneNumber = request.PhoneNumber,
         PasswordHash = hasher.Hash(request.Password),
-        FullName = fullname,
+        FirstName = request.FirstName,
+        LastName = request.LastName,
+        MiddleName = request.MiddleName,
         BirthDate = request.BirthDate,
         City = request.City,
         CreatedAt = DateTime.UtcNow
