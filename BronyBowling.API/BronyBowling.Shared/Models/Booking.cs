@@ -3,7 +3,7 @@ public class Booking
 {
     public Guid BookingId { get; set; }
     public Guid UserId { get; set; }
-    public int BowlingLanesId { get; set; }
+    public int BowlingLaneId { get; set; }
     public BowlingLane Lane { get; set; }
     public DateTime StartTime {  get; set; }
     public DateTime EndTime { get; set; }

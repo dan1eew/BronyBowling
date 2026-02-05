@@ -1,0 +1,78 @@
+﻿<<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Бронирование</title>
+</head>
+<body>
+
+<h2>Бронирование дорожек</h2>
+
+<label>Дата:</label>
+<input type="date" id="date"><br><br>
+
+<label>Дорожка:</label>
+<select id="lane"></select><br><br>
+
+<label>Начало:</label>
+<input type="time" id="start"><br>
+
+<label>Конец:</label>
+<input type="time" id="end"><br><br>
+
+<button onclick="book()">Забронировать</button>
+
+<p id="result"></p>
+
+<script>
+const BOOKING_API = "http://localhost:5280";
+const token = localStorage.getItem("jwt");
+
+if (!token) location.href = "login.html";
+
+async function loadLanes() {
+    const r = await fetch(`${BOOKING_API}/api/lanes`);
+    const lanes = await r.json();
+
+    const select = document.getElementById("lane");
+    lanes.forEach(l => {
+        const o = document.createElement("option");
+        o.value = l.id;
+        o.text = "Дорожка №" + l.number;
+        select.appendChild(o);
+    });
+}
+
+async function book() {
+    const date = document.getElementById("date").value;
+    const start = document.getElementById("start").value;
+    const end = document.getElementById("end").value;
+
+    const body = {
+        laneId: parseInt(lane.value),
+        startTime: date + "T" + start,
+        endTime: date + "T" + end
+    };
+
+    const r = await fetch(`${BOOKING_API}/api/bookings`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!r.ok) {
+        result.innerText = await r.text();
+        return;
+    }
+
+    result.innerText = "Бронь успешно создана!";
+}
+
+loadLanes();
+</script>
+
+</body>
+</html>

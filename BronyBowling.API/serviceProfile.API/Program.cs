@@ -96,7 +96,6 @@ app.MapGet("/profile", async (
 })
 .RequireAuthorization();
 
-
 // ---------- UPDATE PROFILE ----------
 app.MapPut("/profile", async (
     UpdateProfileRequest request,
@@ -131,7 +130,6 @@ app.MapPut("/profile", async (
     return Results.Ok();
 })
 .RequireAuthorization();
-
 
 // ---------- DELETE PROFILE ----------
 app.MapDelete("/profile", async (

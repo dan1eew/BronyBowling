@@ -9,16 +9,14 @@ using System.Security.Claims;
 var builder = WebApplication.CreateBuilder(args);
 
 // -------------------- SERVICES --------------------
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    )
-);
+
+builder.Services.AddDbContext<ApplicationDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
-        opt.TokenValidationParameters = new()
+        opt.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidIssuer = AuthOptions.ISSUER,
@@ -49,7 +47,6 @@ var app = builder.Build();
 
 // -------------------- MIDDLEWARE --------------------
 
-app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -89,7 +86,7 @@ app.MapPost("/bookings", async (
         return Results.Unauthorized();
 
     var hasConflict = await db.Bookings.AnyAsync(b =>
-        b.LaneId == booking.LaneId &&
+        b.BowlingLaneId == booking.BowlingLaneId &&
         b.Status != "Cancelled" &&
         booking.StartTime < b.EndTime &&
         booking.EndTime > b.StartTime);

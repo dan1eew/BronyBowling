@@ -7,6 +7,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
            : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<Booking> Bookings => Set<Booking>();
+    public DbSet<BowlingLane> BowlingLanes => Set<BowlingLane>();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         // ---------- USERS ----------
@@ -30,7 +33,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         b.Entity<BowlingLane>(e =>
         {
             e.ToTable("bowling_lanes");
-            e.HasKey(x => x.BowlingLanesId);
+            e.HasKey(x => x.BowlingLaneId);
 
             e.Property(x => x.Number).IsRequired();
             e.Property(x => x.IsActive).IsRequired();
