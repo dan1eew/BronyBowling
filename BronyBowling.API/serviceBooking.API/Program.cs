@@ -4,6 +4,7 @@ using BronyBowling.Shared.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using serviceBooking.API.DTOs;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -77,7 +78,7 @@ app.MapGet("/bookings", async (
 });
 
 app.MapPost("/bookings", async (
-    Booking booking,
+    CreateBookingRequest request,
     ClaimsPrincipal user,
     ApplicationDbContext db) =>
 {
@@ -85,19 +86,28 @@ app.MapPost("/bookings", async (
     if (userId is null)
         return Results.Unauthorized();
 
+    if (request.EndTime <= request.StartTime)
+        return Results.BadRequest("Некорректный интервал времени");
+
     var hasConflict = await db.Bookings.AnyAsync(b =>
-        b.BowlingLaneId == booking.BowlingLaneId &&
+        b.BowlingLaneId == request.BowlingLaneId &&
         b.Status != "Cancelled" &&
-        booking.StartTime < b.EndTime &&
-        booking.EndTime > b.StartTime);
+        request.StartTime < b.EndTime &&
+        request.EndTime > b.StartTime);
 
     if (hasConflict)
         return Results.BadRequest("Дорожка занята в выбранное время");
 
-    booking.BookingId = Guid.NewGuid();
-    booking.UserId = Guid.Parse(userId);
-    booking.CreatedAt = DateTime.UtcNow;
-    booking.Status = "Pending";
+    var booking = new Booking
+    {
+        BookingId = Guid.NewGuid(),
+        UserId = Guid.Parse(userId),
+        BowlingLaneId = request.BowlingLaneId,
+        StartTime = request.StartTime,
+        EndTime = request.EndTime,
+        Status = "Pending",
+        CreatedAt = DateTime.UtcNow
+    };
 
     db.Bookings.Add(booking);
     await db.SaveChangesAsync();

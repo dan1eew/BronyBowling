@@ -45,11 +45,18 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.ToTable("bookings");
             e.HasKey(x => x.BookingId);
 
-            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
-            e.Property(x => x.CreatedAt).IsRequired();
+            e.Property(x => x.Status)
+                .HasMaxLength(20)
+                .IsRequired();
 
-            e.HasOne(x => x.Lane).WithMany().HasForeignKey(x => x.BowlingLaneId)
-             .HasForeignKey(x => x.BookingId);
+            e.Property(x => x.CreatedAt)
+                .IsRequired();
+
+            e.HasOne(x => x.Lane)
+                .WithMany()
+                .HasForeignKey(x => x.BowlingLaneId)
+                .HasPrincipalKey(x => x.BowlingLaneId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
