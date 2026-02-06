@@ -48,7 +48,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.Property(x => x.Status).HasMaxLength(20).IsRequired();
             e.Property(x => x.CreatedAt).IsRequired();
 
-            e.HasOne(x => x.Lane).WithMany().HasForeignKey(x => x.BookingId);
+            e.HasOne(x => x.Lane).WithMany().HasForeignKey(x => x.BowlingLaneId)
+             .HasForeignKey(x => x.BookingId);
         });
     }
 }
