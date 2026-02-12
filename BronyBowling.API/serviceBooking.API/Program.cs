@@ -66,6 +66,26 @@ app.MapGet("/lanes", async (ApplicationDbContext db) =>
     return Results.Ok(lanes);
 });
 
+app.MapGet("/lanes/available", async (
+    DateTime start,
+    DateTime end,
+    ApplicationDbContext db) =>
+{
+    var busyLaneIds = await db.Bookings
+        .Where(b => b.Status != "Cancelled"
+            && start < b.EndTime
+            && end > b.StartTime)
+        .Select(b => b.BowlingLaneId)
+        .ToListAsync();
+
+    var freeLanes = await db.BowlingLanes
+    .Where(l => l.IsActive && !busyLaneIds.Contains(l.BowlingLaneId))
+    .OrderBy(l => l.Number)
+    .ToListAsync();
+
+    return Results.Ok(freeLanes);
+});
+
 app.MapGet("/bookings", async (
     DateTime date,
     ApplicationDbContext db) =>
@@ -82,10 +102,6 @@ app.MapPost("/bookings", async (
     ClaimsPrincipal user,
     ApplicationDbContext db) =>
 {
-    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (userId is null)
-        return Results.Unauthorized();
-
     if (request.EndTime <= request.StartTime)
         return Results.BadRequest("Некорректный интервал времени");
 
@@ -96,18 +112,27 @@ app.MapPost("/bookings", async (
         request.EndTime > b.StartTime);
 
     if (hasConflict)
-        return Results.BadRequest("Дорожка занята в выбранное время");
+        return Results.BadRequest("Дорожка занята");
+
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
     var booking = new Booking
     {
         BookingId = Guid.NewGuid(),
-        UserId = Guid.Parse(userId),
         BowlingLaneId = request.BowlingLaneId,
         StartTime = request.StartTime,
         EndTime = request.EndTime,
         Status = "Pending",
         CreatedAt = DateTime.UtcNow
     };
+
+    if(userId != null)
+        booking.UserId = Guid.Parse(userId);
+    else
+    {
+        booking.GuestName = request.GuestName;
+        booking.GuestPhone = request.GuestPhone;
+    }
 
     db.Bookings.Add(booking);
     await db.SaveChangesAsync();

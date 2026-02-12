@@ -1,78 +1,63 @@
-﻿<<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Бронирование</title>
-</head>
-<body>
+﻿<script>
+    const BOOKING_API = "http://localhost:5280";
+    const token = localStorage.getItem("jwt");
 
-<h2>Бронирование дорожек</h2>
+    async function searchLanes() {
+        const date = document.getElementById("date").value;
+        const start = document.getElementById("start").value;
+        const end = document.getElementById("end").value;
 
-<label>Дата:</label>
-<input type="date" id="date"><br><br>
+        if (!date || !start || !end) {
+            alert("Выберите дату и время");
+            return;
+        }
 
-<label>Дорожка:</label>
-<select id="lane"></select><br><br>
+        const startTime = date + "T" + start;
+        const endTime = date + "T" + end;
 
-<label>Начало:</label>
-<input type="time" id="start"><br>
+        const r = await fetch(`${BOOKING_API}/lanes/available?start=${startTime}&end=${endTime}`);
+        const lanes = await r.json();
 
-<label>Конец:</label>
-<input type="time" id="end"><br><br>
+        lane.innerHTML = "";
 
-<button onclick="book()">Забронировать</button>
-
-<p id="result"></p>
-
-<script>
-const BOOKING_API = "http://localhost:5280";
-const token = localStorage.getItem("jwt");
-
-if (!token) location.href = "login.html";
-
-async function loadLanes() {
-    const r = await fetch(`${BOOKING_API}/api/lanes`);
-    const lanes = await r.json();
-
-    const select = document.getElementById("lane");
-    lanes.forEach(l => {
-        const o = document.createElement("option");
-        o.value = l.id;
-        o.text = "Дорожка №" + l.number;
-        select.appendChild(o);
-    });
-}
-
-async function book() {
-    const date = document.getElementById("date").value;
-    const start = document.getElementById("start").value;
-    const end = document.getElementById("end").value;
-
-    const body = {
-        laneId: parseInt(lane.value),
-        startTime: date + "T" + start,
-        endTime: date + "T" + end
-    };
-
-    const r = await fetch(`${BOOKING_API}/api/bookings`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + token
-        },
-        body: JSON.stringify(body)
-    });
-
-    if (!r.ok) {
-        result.innerText = await r.text();
-        return;
+        lanes.forEach(l => {
+            const o = document.createElement("option");
+            o.value = l.bowlingLaneId;
+            o.text = "Дорожка №" + l.number;
+            lane.appendChild(o);
+        });
     }
 
-    result.innerText = "Бронь успешно создана!";
-}
+    async function book() {
+        const date = document.getElementById("date").value;
+        const start = document.getElementById("start").value;
+        const end = document.getElementById("end").value;
 
-loadLanes();
+        const body = {
+            bowlingLaneId: parseInt(lane.value),
+            startTime: date + "T" + start,
+            endTime: date + "T" + end,
+            guestName: document.getElementById("guestName").value || null,
+            guestPhone: document.getElementById("guestPhone").value || null
+        };
+
+        const r = await fetch(`${BOOKING_API}/bookings`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { "Authorization": "Bearer " + token } : {})
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!r.ok) {
+            result.innerText = await r.text();
+            return;
+        }
+
+        const booking = await r.json();
+
+        localStorage.setItem("booking", JSON.stringify(booking));
+        location.href = "payment.html";
+    }
 </script>
-
-</body>
-</html>
