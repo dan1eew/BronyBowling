@@ -141,4 +141,4 @@ app.MapPost("/bookings", async (
 })
 .RequireAuthorization();
 
-app.Run("http://localhost:5280");
+app.Run();
