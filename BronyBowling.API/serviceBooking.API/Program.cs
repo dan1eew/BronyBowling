@@ -79,22 +79,11 @@ app.MapGet("/lanes/available", async (
         .ToListAsync();
 
     var freeLanes = await db.BowlingLanes
-    .Where(l => l.IsActive && !busyLaneIds.Contains(l.BowlingLaneId))
-    .OrderBy(l => l.Number)
-    .ToListAsync();
-
-    return Results.Ok(freeLanes);
-});
-
-app.MapGet("/bookings", async (
-    DateTime date,
-    ApplicationDbContext db) =>
-{
-    var bookings = await db.Bookings
-        .Where(b => b.StartTime.Date == date.Date && b.Status != "Cancelled")
+        .Where(l => l.IsActive && !busyLaneIds.Contains(l.BowlingLaneId))
+        .OrderBy(l => l.Number)
         .ToListAsync();
 
-    return Results.Ok(bookings);
+    return Results.Ok(freeLanes);
 });
 
 app.MapPost("/bookings", async (
@@ -103,7 +92,7 @@ app.MapPost("/bookings", async (
     ApplicationDbContext db) =>
 {
     if (request.EndTime <= request.StartTime)
-        return Results.BadRequest("Некорректный интервал времени");
+        return Results.BadRequest("Некорректный интервал");
 
     var hasConflict = await db.Bookings.AnyAsync(b =>
         b.BowlingLaneId == request.BowlingLaneId &&
@@ -122,15 +111,21 @@ app.MapPost("/bookings", async (
         BowlingLaneId = request.BowlingLaneId,
         StartTime = request.StartTime,
         EndTime = request.EndTime,
-        Status = "Pending",
         CreatedAt = DateTime.UtcNow
     };
 
-    if(userId != null)
+    if (0 >= request.BowlingLaneId || request.BowlingLaneId > 20)
+        return Results.BadRequest("Введите корректный номер дорожки от 1 до 20");
+
+    if (userId != null)
         booking.UserId = Guid.Parse(userId);
     else
     {
-        booking.GuestName = request.GuestName;
+        if (string.IsNullOrWhiteSpace(request.GuestFullName) ||
+            string.IsNullOrWhiteSpace(request.GuestPhone))
+            return Results.BadRequest("Введите ФИО и телефон");
+
+        booking.GuestFullName = request.GuestFullName;
         booking.GuestPhone = request.GuestPhone;
     }
 
@@ -139,6 +134,6 @@ app.MapPost("/bookings", async (
 
     return Results.Ok(booking);
 })
-.RequireAuthorization();
+.AllowAnonymous();  
 
-app.Run();
+app.Run("http://localhost:5280");

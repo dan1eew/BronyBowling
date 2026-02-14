@@ -38,7 +38,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// SWAGGER
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
@@ -70,56 +70,39 @@ app.MapPost("/register", async (
     ApplicationDbContext db,
     PasswordHasher hasher) =>
 {
-    if (string.IsNullOrWhiteSpace(request.PhoneNumber)
-        || string.IsNullOrWhiteSpace(request.Password)
-        || string.IsNullOrWhiteSpace(request.FirstName)
-        || string.IsNullOrWhiteSpace(request.LastName))
-        return Results.BadRequest("Заполните обязательные поля");
-
-    if (await db.Users.AnyAsync(x => x.PhoneNumber == request.PhoneNumber))
-        return Results.BadRequest("Пользователь уже существует");
-
-    if (!IsValidPhone(request.PhoneNumber))
-        return Results.BadRequest("Номер телефон должен содержать 11 цифр");
-
-    var fullname = request.MiddleName is null
-        ? $"{request.LastName} {request.FirstName}"
-        : $"{request.LastName} {request.FirstName} {request.MiddleName}";
-
-    var user = new User
+    try
     {
-        UserId = Guid.NewGuid(),
-        PhoneNumber = request.PhoneNumber,
-        PasswordHash = hasher.Hash(request.Password),
-        FirstName = request.FirstName,
-        LastName = request.LastName,
-        MiddleName = request.MiddleName,
-        BirthDate = request.BirthDate,
-        City = request.City,
-        CreatedAt = DateTime.UtcNow
-    };
-
-    db.Users.Add(user);
-    await db.SaveChangesAsync();
+        var user = new User
+        {
+            UserId = Guid.NewGuid(),
+            PhoneNumber = request.PhoneNumber,
+            PasswordHash = hasher.Hash(request.Password),
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            MiddleName = request.MiddleName,
+            CreatedAt = DateTime.UtcNow
+        };
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+    }
+    catch { return Results.BadRequest("Не удалось зарегистрировать, повторите попытку позже"); }
 
     return Results.Ok();
-}); // register
+});
 
 app.MapPost("/login", async (
     LoginRequest request,
     ApplicationDbContext db,
     PasswordHasher hasher) =>
 {
-    var user = await db.Users
-        .FirstOrDefaultAsync(x => x.PhoneNumber == request.PhoneNumber);
+    var user = await db.Users.FirstOrDefaultAsync(x => x.PhoneNumber == request.PhoneNumber);
 
-    if (user is null || !hasher.Verify(request.Password, user.PasswordHash))
+    if (user == null || !hasher.Verify(request.Password, user.PasswordHash))
         return Results.Unauthorized();
 
     var claims = new[]
     {
-        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-        new Claim(ClaimTypes.Name, user.PhoneNumber)
+        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString())
     };
 
     var token = new JwtSecurityTokenHandler().WriteToken(
@@ -128,11 +111,10 @@ app.MapPost("/login", async (
             audience: AuthOptions.AUDIENCE,
             claims: claims,
             expires: DateTime.UtcNow.AddHours(1),
-            signingCredentials:
-                new SigningCredentials(AuthOptions.SecurityKey, SecurityAlgorithms.HmacSha256)
+            signingCredentials: new SigningCredentials(AuthOptions.SecurityKey, SecurityAlgorithms.HmacSha256)
         ));
 
     return Results.Ok(new { token });
-}); // login
+});
 
-app.Run();
+app.Run("http://localhost:5001");

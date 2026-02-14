@@ -1,13 +1,11 @@
 import { bookingApi, authHeader } from './api'
 
-export async function getAvailableLanes(start, end) {
-  const r = await bookingApi.get('/lanes/available', {
-    params: { start, end }
-  })
+export const getAvailableLanes = async (start, end) => {
+  const r = await bookingApi.get('/lanes/available', { params: { start, end } })
   return r.data
 }
 
-export async function createBooking(data) {
+export const createBooking = async (data) => {
   const r = await bookingApi.post('/bookings', data, {
     headers: authHeader()
   })

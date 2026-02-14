@@ -4,7 +4,7 @@ public class Booking
 {
     public Guid BookingId { get; set; }
     public Guid? UserId { get; set; }  
-    public string? GuestName { get; set; }
+    public string? GuestFullName { get; set; }
     public string? GuestPhone { get; set; }
     public int BowlingLaneId { get; set; }
     public BowlingLane Lane { get; set; }
