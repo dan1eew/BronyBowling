@@ -1,33 +1,30 @@
 <template>
-  <div class="alert" :class="type">
-    <slot />
-  </div>
+  <input :type="type"
+         :placeholder="placeholder"
+         :value="modelValue"
+         @input="$emit('update:modelValue', $event.target.value)"
+         class="input" />
 </template>
 
 <script setup>
-  defineProps({ type: { default: 'info' } })
+  import { defineProps, defineEmits } from 'vue'
+  defineProps({ modelValue: String, type: { default: 'text' }, placeholder: String })
+  defineEmits(['update:modelValue'])
 </script>
 
 <style scoped>
-  .alert {
-    padding: 16px 20px;
-    border-radius: 14px;
-    font-weight: 500;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .input {
+    width: 100%;
+    padding: 15px 20px;
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    color: white;
+    font-size: 15px;
   }
 
-  .error {
-    background: rgba(248, 113, 113, 0.15);
-    color: #f87171;
-    border: 1px solid #f87171;
-  }
-
-  .success {
-    background: rgba(74, 222, 128, 0.15);
-    color: #4ade80;
-    border: 1px solid #4ade80;
-  }
+    .input:focus {
+      border-color: #22c55e;
+      outline: none;
+    }
 </style>

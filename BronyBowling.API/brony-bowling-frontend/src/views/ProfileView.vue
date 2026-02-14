@@ -1,56 +1,85 @@
 <template>
-  <div class="profile-page">
+  <div class="profile">
     <div class="container">
-      <h1>Личный кабинет</h1>
-
-      <div class="tabs">
-        <button :class="{ active: tab === 'info' }" @click="tab = 'info'">Профиль</button>
-        <button :class="{ active: tab === 'bookings' }" @click="tab = 'bookings'">Мои брони</button>
+      <div class="left">
+        <h2>Профиль</h2>
+        <BaseInput v-model="form.firstName" placeholder="Имя" />
+        <BaseInput v-model="form.lastName" placeholder="Фамилия" />
+        <BaseInput v-model="form.phoneNumber" type="tel" placeholder="Телефон" />
+        <div class="actions">
+          <button @click="save" class="save">Сохранить</button>
+          <button @click="deleteProfile" class="delete">Удалить профиль</button>
+        </div>
       </div>
 
-      <div v-if="tab === 'info'" class="glass-card">
-        <BaseInput v-model="form.firstName" label="Имя" />
-        <BaseInput v-model="form.lastName" label="Фамилия" />
-        <BaseInput v-model="form.phoneNumber" label="Телефон" type="tel" />
-        <button @click="save" class="neon-btn">Сохранить изменения</button>
-      </div>
-
-      <div v-else class="glass-card">
-        <p v-if="!bookings.length" class="empty">У вас пока нет броней</p>
-        <!-- Здесь можно добавить список броней позже -->
+      <div class="right">
+        <h2>Мои бронирования</h2>
+        <p v-if="!bookings.length" class="empty">Пока нет броней</p>
+        <!-- сюда потом добавишь таблицу -->
       </div>
     </div>
   </div>
 </template>
 
-<script setup>import { ref } from 'vue'
-import BaseInput from '../components/BaseInput.vue'
+<script setup>
+  import { ref } from 'vue'
+  import BaseInput from '../components/BaseInput.vue'
 
-const tab = ref('info')
-const form = ref({ firstName: '', lastName: '', phoneNumber: '' })
-const bookings = ref([]) // можно подгрузить из API позже
-
-function save() {
-  alert('✅ Данные сохранены')
-}</script>
+  const form = ref({ firstName: '', lastName: '', phoneNumber: '' })
+  const bookings = ref([])
+  const save = () => alert('Сохранено')
+  const deleteProfile = () => confirm('Удалить?') && alert('Удалено')
+</script>
 
 <style scoped>
-  .tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 30px;
+  .profile {
+    padding: 60px 40px;
   }
 
-    .tabs button {
-      padding: 12px 28px;
-      background: rgba(255,255,255,0.08);
-      border: none;
-      border-radius: 9999px;
-      font-weight: 600;
-    }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+  }
 
-      .tabs button.active {
-        background: #22c55e;
-        color: black;
-      }
+  .left, .right {
+    background: #111827;
+    padding: 40px;
+    border-radius: 16px;
+    border: 1px solid #1e2937;
+  }
+
+  h2 {
+    margin-bottom: 32px;
+    font-size: 24px;
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .save, .delete {
+    flex: 1;
+    padding: 14px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .save {
+    background: #22c55e;
+    color: black;
+  }
+
+  .delete {
+    background: #ef4444;
+    color: white;
+  }
+
+  .empty {
+    opacity: 0.6;
+  }
 </style>

@@ -1,7 +1,7 @@
 <template>
-  <div class="layout">
+  <div class="app">
     <AppHeader />
-    <main class="main-content">
+    <main class="main">
       <router-view />
     </main>
   </div>
@@ -12,26 +12,20 @@
 </script>
 
 <style>
-  * {
-    box-sizing: border-box;
-  }
-
   body {
     margin: 0;
     font-family: 'Inter', system-ui, sans-serif;
-    background: linear-gradient(135deg, #0a0f1c, #1a2338);
-    color: white;
-    min-height: 100vh;
+    background: #000000;
+    color: #e0f2fe;
   }
 
-  .layout {
+  .app {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
   }
 
-  .main-content {
+  .main {
     flex: 1;
-    padding-top: 80px;
   }
 </style>
