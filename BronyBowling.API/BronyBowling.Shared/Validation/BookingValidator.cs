@@ -1,4 +1,4 @@
-﻿namespace serviceBooking.API.Validation;
+﻿namespace BronyBowling.Shared.Validation;
 public class BookingValidator
 {
     public static List<string> Validate(DateTime start, DateTime end, int laneId)

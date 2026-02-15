@@ -1,4 +1,4 @@
-﻿namespace serviceBooking.API.Validation;
+﻿namespace BronyBowling.Shared.Validation;
 public class PhoneValidator
 {
     public static bool IsValid(string? phone)
