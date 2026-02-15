@@ -41,12 +41,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS — ÎÒÊÐÛÒÛÉ (DEV)
+// CORS 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("Frontend", policy =>
         policy
-            .AllowAnyOrigin()
+            .WithOrigins(
+                "http://localhost:5173",   
+                "http://localhost:63230",   
+                "http://localhost:5001"  
+            )
             .AllowAnyHeader()
             .AllowAnyMethod()
     );
@@ -56,10 +60,11 @@ var app = builder.Build();
 
 // ==================== MIDDLEWARE ====================
 
+app.UseCors("Frontend");  
 
-app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -157,4 +162,4 @@ app.MapDelete("/profile", async (
 })
 .RequireAuthorization();
 
-app.Run();
+app.Run("http://localhost:5272");

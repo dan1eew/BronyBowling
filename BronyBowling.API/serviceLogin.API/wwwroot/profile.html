@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h3>Профиль</h3>
+
+        <input id="firstName" placeholder="Имя">
+        <input id="lastName" placeholder="Фамилия">
+        <input id="middleName" placeholder="Отчество">
+        <input id="birthDate" type="date">
+        <input id="city" placeholder="Город">
+
+        <button onclick="loadProfile()">Загрузить</button>
+        <button onclick="saveProfile()">Сохранить</button>
+        <button onclick="deleteProfile()">Удалить профиль</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if (!getToken()) location.href = "login.html";
+
+        async function loadProfile() {
+            const r = await fetch(`${PROFILE_API}/profile`, {
+                headers: authHeader()
+            });
+
+            if (!r.ok) {
+                showStatus("Ошибка загрузки профиля", true);
+                return;
+            }
+
+            const p = await r.json();
+            firstName.value = p.firstName || "";
+            lastName.value = p.lastName || "";
+            middleName.value = p.middleName || "";
+            birthDate.value = p.birthDate?.substring(0, 10) || "";
+            city.value = p.city || "";
+        }
+
+        async function saveProfile() {
+            const r = await fetch(`${PROFILE_API}/profile`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...authHeader()
+                },
+                body: JSON.stringify({
+                    firstName: firstName.value,
+                    lastName: lastName.value,
+                    middleName: middleName.value || null,
+                    birthDate: birthDate.value || null,
+                    city: city.value || null
+                })
+            });
+
+            if (!r.ok) {
+                const err = await r.json();
+                showStatus(err.errors.join("\n"), true);
+                return;
+            }
+
+            showStatus("Профиль обновлён");
+        }
+
+        async function deleteProfile() {
+            const r = await fetch(`${PROFILE_API}/profile`, {
+                method: "DELETE",
+                headers: authHeader()
+            });
+
+            if (!r.ok) {
+                showStatus("Ошибка удаления", true);
+                return;
+            }
+
+            logout();
+        }
+    </script>
+
+</body>
+</html>

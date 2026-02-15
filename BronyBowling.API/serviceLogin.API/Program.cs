@@ -1,7 +1,9 @@
 using BronyBowling.Shared.Auth;
 using BronyBowling.Shared.Data;
 using BronyBowling.Shared.Models;
+using BronyBowling.Shared.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using serviceLogin.API.DTOs;
@@ -10,9 +12,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
-
-bool IsValidPhone(string phone) =>
-    phone.Length == 11 && phone.All(char.IsDigit);
 
 // -------------------- SERVICES --------------------
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
@@ -51,6 +50,9 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // -------------------- MIDDLEWARE --------------------
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -58,52 +60,46 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 // -------------------- ENDPOINTS --------------------
+
 app.MapPost("/register", async (
     RegisterRequest request,
     ApplicationDbContext db,
     PasswordHasher hasher) =>
 {
-    if (request.PhoneNumber is null || !IsValidPhone(request.PhoneNumber))
-        return Results.BadRequest("Некорректный номер телефона");
+    var validation = new ValidationResult
+    {
+        Errors = UserValidator.ValidateRegistration(
+            request.PhoneNumber,
+            request.Password,
+            request.FirstName,
+            request.LastName)
+    };
 
-    if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-        return Results.BadRequest("Пароль минимум 6 символов");
-
-    if (string.IsNullOrWhiteSpace(request.FirstName))
-        return Results.BadRequest("Введите имя");
-
-    if (string.IsNullOrWhiteSpace(request.LastName))
-        return Results.BadRequest("Введите фамилию");
+    if (!validation.Success)
+        return Results.BadRequest(validation);
 
     var exists = await db.Users
         .AnyAsync(x => x.PhoneNumber == request.PhoneNumber);
 
     if (exists)
-        return Results.Conflict("Пользователь уже существует");
-
-    try
-    {
-        var user = new User
+        return Results.Conflict(new ValidationResult
         {
-            UserId = Guid.NewGuid(),
-            PhoneNumber = request.PhoneNumber,
-            PasswordHash = hasher.Hash(request.Password),
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
-            MiddleName = request.MiddleName?.Trim(),
-            CreatedAt = DateTime.UtcNow
-        };
+            Errors = { "Пользователь уже существует" }
+        });
 
-        db.Users.Add(user);
-        await db.SaveChangesAsync();
-    }
-    catch (Exception ex)
+    var user = new User
     {
-        return Results.Problem(
-            title: "Ошибка регистрации",
-            detail: ex.Message
-        );
-    }
+        UserId = Guid.NewGuid(),
+        PhoneNumber = request.PhoneNumber!,
+        PasswordHash = hasher.Hash(request.Password!),
+        FirstName = request.FirstName!,
+        LastName = request.LastName!,
+        MiddleName = request.MiddleName,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    db.Users.Add(user);
+    await db.SaveChangesAsync();
 
     return Results.Ok();
 });

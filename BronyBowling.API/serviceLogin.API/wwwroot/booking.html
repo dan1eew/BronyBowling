@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Бронирование</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h3>Бронирование</h3>
+
+        <input id="date" type="date">
+        <input id="start" type="time">
+        <input id="end" type="time">
+
+        <button onclick="search()">Найти дорожки</button>
+
+        <select id="lane"></select>
+
+        <div id="guestFields" style="display:none">
+            <input id="guestName" placeholder="ФИО">
+            <input id="guestPhone" placeholder="Телефон">
+        </div>
+
+        <button onclick="book()">Забронировать</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if (!getToken()) guestFields.style.display = "block";
+
+        async function search() {
+            const startTime = `${date.value}T${start.value}:00`;
+            const endTime = `${date.value}T${end.value}:00`;
+
+            const r = await fetch(`${BOOKING_API}/lanes/available?start=${startTime}&end=${endTime}`);
+            const lanes = await r.json();
+
+            lane.innerHTML = "";
+            lanes.forEach(l => {
+                lane.innerHTML += `<option value="${l.bowlingLaneId}">
+            Дорожка №${l.number}
+          </option>`;
+            });
+        }
+
+        async function book() {
+            const body = {
+                bowlingLaneId: parseInt(lane.value),
+                startTime: `${date.value}T${start.value}:00`,
+                endTime: `${date.value}T${end.value}:00`,
+                guestFullName: getToken() ? null : guestName.value,
+                guestPhone: getToken() ? null : guestPhone.value
+            };
+
+            const r = await fetch(`${BOOKING_API}/bookings`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...authHeader()
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!r.ok) {
+                const err = await r.json();
+                showStatus(err.errors.join("\n"), true);
+                return;
+            }
+
+            const booking = await r.json();
+            localStorage.setItem("booking", JSON.stringify(booking));
+
+            showStatus("Бронь создана");
+            location.href = "payment.html";
+        }
+    </script>
+
+</body>
+</html>
