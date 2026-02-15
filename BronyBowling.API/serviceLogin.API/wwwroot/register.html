@@ -1,6 +1,49 @@
-﻿namespace serviceLogin.API.wwwroot
-{
-    public class register
-    {
-    }
-}
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Регистрация</h2>
+
+        <input id="phone" placeholder="Телефон">
+        <input id="password" type="password" placeholder="Пароль">
+        <input id="lastName" placeholder="Фамилия">
+        <input id="firstName" placeholder="Имя">
+        <input id="middleName" placeholder="Отчество">
+
+        <button onclick="register()">Создать аккаунт</button>
+        <button onclick="location.href='index.html'">Назад</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>async function register() {
+  try {
+    const r = await fetch(AUTH_API + "/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phoneNumber: phone.value,
+        password: password.value,
+        firstName: firstName.value,
+        lastName: lastName.value,
+        middleName: middleName.value || null
+      })
+    });
+
+    if (r.status === 409)
+      throw new Error("Пользователь уже существует");
+
+    if (!r.ok)
+      throw new Error(await r.text());
+
+    showStatus("Регистрация успешна ✅", true);
+  } catch (e) {
+    showStatus(e.message);
+  }
+}</script>
+</body>
+</html>
