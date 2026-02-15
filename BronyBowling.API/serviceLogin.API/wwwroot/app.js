@@ -1,5 +1,5 @@
 ﻿const AUTH_API = "http://localhost:5001";
-const PROFILE_API = "http://localhost:5254";
+const PROFILE_API = "http://localhost:5272";
 const BOOKING_API = "http://localhost:5280";
 
 function getToken() {
