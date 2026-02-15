@@ -1,6 +1,64 @@
-﻿namespace serviceLogin.API.wwwroot
-{
-    public class style
-    {
+﻿body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+}
+
+.container {
+    width: 420px;
+    background: #1e293b;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+input, select, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+button {
+    background: #7c3aed;
+    color: white;
+    cursor: pointer;
+}
+
+    button:hover {
+        background: #6d28d9;
     }
+
+.nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+    .nav button {
+        flex: 1;
+        background: #334155;
+    }
+
+.status {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.success {
+    background: #22c55e;
+}
+
+.error {
+    background: #ef4444;
 }
