@@ -1,6 +1,7 @@
 using BronyBowling.Shared.Auth;
 using BronyBowling.Shared.Data;
 using BronyBowling.Shared.Models;
+using BronyBowling.Shared.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
