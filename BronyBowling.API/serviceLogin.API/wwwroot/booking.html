@@ -1,6 +1,80 @@
-﻿namespace serviceLogin.API.wwwroot
-{
-    public class booking
-    {
-    }
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Бронирование</h2>
+
+        <input id="date" type="date">
+        <input id="start" type="time">
+        <input id="end" type="time">
+
+        <button onclick="search()">Найти дорожки</button>
+
+        <select id="lanes"></select>
+
+        <div id="guestBlock">
+            <input id="guestName" placeholder="ФИО">
+            <input id="guestPhone" placeholder="Телефон">
+        </div>
+
+        <button onclick="book()">Забронировать</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>function isAuth() { return !!getToken(); }
+
+guestBlock.style.display = isAuth() ? "none" : "block";
+
+async function search() {
+  try {
+    const startTime = `${date.value}T${start.value}:00`;
+    const endTime = `${date.value}T${end.value}:00`;
+
+    const r = await fetch(`${BOOKING_API}/lanes/available?start=${startTime}&end=${endTime}`);
+    const data = await r.json();
+
+    lanes.innerHTML = "";
+    data.forEach(l =>
+      lanes.innerHTML += `<option value="${l.bowlingLaneId}">Дорожка №${l.number}</option>`
+    );
+
+    showStatus("Дорожки загружены ✅", true);
+  } catch {
+    showStatus("Ошибка загрузки дорожек");
+  }
 }
+
+async function book() {
+  try {
+    const body = {
+      bowlingLaneId: Number(lanes.value),
+      startTime: `${date.value}T${start.value}:00`,
+      endTime: `${date.value}T${end.value}:00`,
+      guestFullName: isAuth() ? null : guestName.value,
+      guestPhone: isAuth() ? null : guestPhone.value
+    };
+
+    const r = await fetch(BOOKING_API + "/bookings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(isAuth() && { Authorization: "Bearer " + getToken() })
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!r.ok) throw new Error(await r.text());
+
+    const b = await r.json();
+    showStatus("Бронь создана ✅", true);
+  } catch (e) {
+    showStatus(e.message);
+  }
+}</script>
+</body>
+</html>
