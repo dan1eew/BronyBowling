@@ -56,7 +56,6 @@ var app = builder.Build();
 
 // ==================== MIDDLEWARE ====================
 
-
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
