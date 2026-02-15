@@ -51,12 +51,13 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // -------------------- MIDDLEWARE --------------------
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
-
 // -------------------- ENDPOINTS --------------------
 app.MapPost("/register", async (
     RegisterRequest request,
