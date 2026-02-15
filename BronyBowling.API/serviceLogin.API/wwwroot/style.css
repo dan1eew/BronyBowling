@@ -1,59 +1,109 @@
-﻿body {
+﻿* {
+    box-sizing: border-box;
+}
+
+body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: white;
+    background: #0b0f19;
+    color: #e5e7eb;
 }
 
 header {
-    background: #020617;
-    padding: 15px 30px;
+    background: #111827;
+    border-bottom: 1px solid #1f2933;
+    padding: 14px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-nav button {
-    margin-left: 10px;
+    header h1 {
+        font-size: 18px;
+        margin: 0;
+        font-weight: 600;
+        color: #f9fafb;
+    }
+
+nav {
+    display: flex;
+    gap: 10px;
 }
+
+    nav button {
+        width: auto;
+        padding: 6px 14px;
+        font-size: 14px;
+        background: #1f2933;
+        border: 1px solid #374151;
+        color: #e5e7eb;
+    }
+
+        nav button:hover {
+            background: #374151;
+        }
 
 .container {
-    max-width: 500px;
+    max-width: 520px;
     margin: 40px auto;
-    background: #1e293b;
-    padding: 25px;
-    border-radius: 12px;
+    background: #111827;
+    border: 1px solid #1f2933;
+    border-radius: 10px;
+    padding: 24px;
 }
 
-input, select, button {
+h2, h3 {
+    margin-top: 0;
+    font-weight: 600;
+    color: #f9fafb;
+}
+
+input, select {
     width: 100%;
     margin-top: 10px;
     padding: 10px;
+    background: #020617;
+    border: 1px solid #1f2933;
     border-radius: 6px;
-    border: none;
+    color: #e5e7eb;
 }
 
+    input:focus, select:focus {
+        outline: none;
+        border-color: #4f46e5;
+    }
+
 button {
-    background: #7c3aed;
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    background: #4f46e5;
     color: white;
     cursor: pointer;
+    font-size: 14px;
 }
 
     button:hover {
-        background: #6d28d9;
+        background: #4338ca;
     }
 
 .status {
-    margin-top: 15px;
+    margin-top: 16px;
     padding: 10px;
     border-radius: 6px;
+    font-size: 14px;
     white-space: pre-line;
 }
 
 .success {
-    background: #14532d;
+    background: #052e16;
+    border: 1px solid #14532d;
+    color: #bbf7d0;
 }
 
 .error {
-    background: #7f1d1d;
+    background: #3f0d0d;
+    border: 1px solid #7f1d1d;
+    color: #fecaca;
 }
