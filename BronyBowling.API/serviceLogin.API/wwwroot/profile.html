@@ -1,6 +1,86 @@
-﻿namespace serviceLogin.API.wwwroot
-{
-    public class profile
-    {
-    }
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Профиль</h2>
+
+        <input id="firstName" placeholder="Имя">
+        <input id="lastName" placeholder="Фамилия">
+        <input id="middleName" placeholder="Отчество">
+        <input id="birthDate" type="date">
+        <input id="city" placeholder="Город">
+
+        <button onclick="load()">Загрузить</button>
+        <button onclick="update()">Сохранить</button>
+        <button onclick="remove()">Удалить профиль</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>async function load() {
+  try {
+    const r = await fetch(PROFILE_API + "/profile", {
+      headers: { Authorization: "Bearer " + getToken() }
+    });
+
+    if (!r.ok) throw new Error("Не авторизован");
+
+    const p = await r.json();
+    firstName.value = p.firstName;
+    lastName.value = p.lastName;
+    middleName.value = p.middleName || "";
+    birthDate.value = p.birthDate?.substring(0,10) || "";
+    city.value = p.city || "";
+
+    showStatus("Профиль загружен ✅", true);
+  } catch (e) {
+    showStatus(e.message);
+  }
 }
+
+async function update() {
+  try {
+    const r = await fetch(PROFILE_API + "/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken()
+      },
+      body: JSON.stringify({
+        firstName: firstName.value,
+        lastName: lastName.value,
+        middleName: middleName.value || null,
+        birthDate: birthDate.value || null,
+        city: city.value || null
+      })
+    });
+
+    if (!r.ok) throw new Error(await r.text());
+    showStatus("Сохранено ✅", true);
+  } catch (e) {
+    showStatus(e.message);
+  }
+}
+
+async function remove() {
+  if (!confirm("Удалить профиль?")) return;
+
+  try {
+    const r = await fetch(PROFILE_API + "/profile", {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + getToken() }
+    });
+
+    if (!r.ok) throw new Error(await r.text());
+
+    logout();
+  } catch (e) {
+    showStatus(e.message);
+  }
+}</script>
+</body>
+</html>
