@@ -1,5 +1,15 @@
 <Solution>
+  <Folder Name="/Элементы решения/">
+    <File Path="brony-bowling-frontend/.gitignore" />
+    <File Path="brony-bowling-frontend/index.html" />
+    <File Path="brony-bowling-frontend/jsconfig.json" />
+    <File Path="brony-bowling-frontend/package-lock.json" />
+    <File Path="brony-bowling-frontend/package.json" />
+    <File Path="brony-bowling-frontend/README.md" />
+    <File Path="brony-bowling-frontend/vite.config.js" />
+  </Folder>
   <Project Path="BronyBowling.Shared/BronyBowling.Shared.csproj" Id="c0c03ec1-82d9-47b2-9daa-8526ce4744e7" />
+  <Project Path="serviceBooking.API/serviceBooking.API.csproj" Id="85a6780b-1938-4f0f-b971-43f5a926c0a5" />
   <Project Path="serviceLogin.API/serviceLogin.API.csproj" />
   <Project Path="serviceProfile.API/serviceProfile.API.csproj" Id="56cd77ad-d86e-4353-8c38-b628dec8b9cc" />
 </Solution>
