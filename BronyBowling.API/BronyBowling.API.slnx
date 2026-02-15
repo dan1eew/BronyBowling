@@ -8,10 +8,6 @@
     <File Path="brony-bowling-frontend/README.md" />
     <File Path="brony-bowling-frontend/vite.config.js" />
   </Folder>
-  <Project Path="brony-bowling-frontend/brony-bowling-frontend.esproj">
-    <Build />
-    <Deploy />
-  </Project>
   <Project Path="BronyBowling.Shared/BronyBowling.Shared.csproj" Id="c0c03ec1-82d9-47b2-9daa-8526ce4744e7" />
   <Project Path="serviceBooking.API/serviceBooking.API.csproj" Id="85a6780b-1938-4f0f-b971-43f5a926c0a5" />
   <Project Path="serviceLogin.API/serviceLogin.API.csproj" />
