@@ -1,10 +1,27 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title></title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="container">
+        <h1>🎳 Brony Bowling</h1>
 
+        <div class="nav">
+            <button onclick="location.href='login.html'">Вход</button>
+            <button onclick="location.href='register.html'">Регистрация</button>
+        </div>
+
+        <div class="nav">
+            <button onclick="location.href='booking.html'">Бронирование</button>
+            <button onclick="location.href='profile.html'">Профиль</button>
+        </div>
+
+        <button onclick="logout()">Выйти</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
