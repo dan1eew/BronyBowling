@@ -1,9 +1,11 @@
 using BronyBowling.Shared.Auth;
 using BronyBowling.Shared.Data;
 using BronyBowling.Shared.Models;
+using BronyBowling.Shared.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NpgsqlTypes;
 using serviceBooking.API.DTOs;
 using System.Security.Claims;
 
@@ -11,8 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // -------------------- SERVICES --------------------
 
-builder.Services.AddDbContext<ApplicationDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") )
+);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
@@ -54,6 +57,15 @@ app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// -------------------- HELPERS --------------------
+static DateTime EnsureUtc(DateTime dt) =>
+    dt.Kind switch
+    {
+        DateTimeKind.Utc => dt,
+        DateTimeKind.Local => dt.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+    };
+
 // -------------------- ENDPOINTS --------------------
 
 app.MapGet("/lanes", async (ApplicationDbContext db) =>
@@ -71,19 +83,11 @@ app.MapGet("/lanes/available", async (
     DateTime end,
     ApplicationDbContext db) =>
 {
-    var busyLaneIds = await db.Bookings
-        .Where(b => b.Status != "Cancelled"
-            && start < b.EndTime
-            && end > b.StartTime)
-        .Select(b => b.BowlingLaneId)
+    var lanes = await db.BowlingLanes
+        .Where(x => x.IsActive)
+        .OrderBy(x => x.Number)
         .ToListAsync();
-
-    var freeLanes = await db.BowlingLanes
-        .Where(l => l.IsActive && !busyLaneIds.Contains(l.BowlingLaneId))
-        .OrderBy(l => l.Number)
-        .ToListAsync();
-
-    return Results.Ok(freeLanes);
+    return Results.Ok(lanes);
 });
 
 app.MapPost("/bookings", async (
@@ -91,38 +95,39 @@ app.MapPost("/bookings", async (
     ClaimsPrincipal user,
     ApplicationDbContext db) =>
 {
-    if (request.EndTime <= request.StartTime)
-        return Results.BadRequest("Некорректный интервал");
+    var startUtc = EnsureUtc(request.StartTime);
+    var endUtc = EnsureUtc(request.EndTime);
 
-    var hasConflict = await db.Bookings.AnyAsync(b =>
-        b.BowlingLaneId == request.BowlingLaneId &&
-        b.Status != "Cancelled" &&
-        request.StartTime < b.EndTime &&
-        request.EndTime > b.StartTime);
+    // Проверка базовая
+    var errors = BookingValidator.Validate(startUtc, endUtc, request.LaneId);
+    if (errors.Any())
+        return Results.BadRequest(errors);
+
+    var newRange = new NpgsqlRange<DateTime>(startUtc, true, endUtc, false);
+
+    // Проверка конфликта через PostgreSQL диапазон
+    var hasConflict = await db.Bookings
+        .Where(b => b.LaneId == request.LaneId && b.Status != "Cancelled")
+        .AnyAsync(b => b.TimeRange.Overlaps(newRange));
 
     if (hasConflict)
-        return Results.BadRequest("Дорожка занята");
-
-    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Results.BadRequest("Дорожка занята в указанное время");
 
     var booking = new Booking
     {
         BookingId = Guid.NewGuid(),
-        BowlingLaneId = request.BowlingLaneId,
-        StartTime = request.StartTime,
-        EndTime = request.EndTime,
+        LaneId = request.LaneId,
+        TimeRange = newRange,
+        Status = "Created",
         CreatedAt = DateTime.UtcNow
     };
 
-    if (0 >= request.BowlingLaneId || request.BowlingLaneId > 20)
-        return Results.BadRequest("Введите корректный номер дорожки от 1 до 20");
-
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId != null)
         booking.UserId = Guid.Parse(userId);
     else
     {
-        if (string.IsNullOrWhiteSpace(request.GuestFullName) ||
-            string.IsNullOrWhiteSpace(request.GuestPhone))
+        if (string.IsNullOrWhiteSpace(request.GuestFullName) || string.IsNullOrWhiteSpace(request.GuestPhone))
             return Results.BadRequest("Введите ФИО и телефон");
 
         booking.GuestFullName = request.GuestFullName;
@@ -134,6 +139,6 @@ app.MapPost("/bookings", async (
 
     return Results.Ok(booking);
 })
-.AllowAnonymous();  
+.AllowAnonymous();
 
 app.Run("http://localhost:5280");

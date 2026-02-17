@@ -14,8 +14,11 @@ using System.Security.Claims;
 var builder = WebApplication.CreateBuilder(args);
 
 // -------------------- SERVICES --------------------
-builder.Services.AddDbContext<ApplicationDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")
+    )
+);
 
 builder.Services.AddScoped<PasswordHasher>();
 

@@ -50,8 +50,8 @@
         async function book() {
             const body = {
                 bowlingLaneId: parseInt(lane.value),
-                startTime: `${date.value}T${start.value}:00`,
-                endTime: `${date.value}T${end.value}:00`,
+                startTime: `${date.value}T${start.value}:00Z`,
+                endTime: `${date.value}T${end.value}:00Z`,
                 guestFullName: getToken() ? null : guestName.value,
                 guestPhone: getToken() ? null : guestPhone.value
             };

@@ -11,9 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ==================== SERVICES ====================
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    )
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 // AUTH (JWT)

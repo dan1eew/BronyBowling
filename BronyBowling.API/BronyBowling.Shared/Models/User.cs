@@ -1,6 +1,5 @@
 ﻿namespace BronyBowling.Shared.Models;
 
-/// <summary> Пользователь системы </summary>
 public class User
 {
     public Guid UserId { get; set; }
@@ -9,7 +8,7 @@ public class User
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
     public string? MiddleName { get; set; }
-    public DateTime? BirthDate { get; set; }
+    public DateOnly? BirthDate { get; set; }
     public string? City { get; set; }
     public DateTime CreatedAt { get; set; }
 }
