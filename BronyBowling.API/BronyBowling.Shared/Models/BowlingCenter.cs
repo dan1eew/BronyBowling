@@ -2,7 +2,6 @@
 public class BowlingCenter
 {
     public int BowlingCenterId { get; set; }
-
     public string Name { get; set; } = null!;
     public string City { get; set; } = null!;
     public string Street { get; set; } = null!;
