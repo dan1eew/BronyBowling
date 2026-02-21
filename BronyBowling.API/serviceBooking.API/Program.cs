@@ -4,6 +4,7 @@ using BronyBowling.Shared.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,25 +34,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 
-builder.Services.AddCors(opt =>
-{
-    opt.AddDefaultPolicy(p =>
-        p.AllowAnyOrigin()
-         .AllowAnyHeader()
-         .AllowAnyMethod());
-});
+//builder.Services.AddCors(opt =>
+//{
+//    opt.AddDefaultPolicy(p =>
+//        p.AllowAnyOrigin()
+//         .AllowAnyHeader()
+//         .AllowAnyMethod());
+//});
 
 var app = builder.Build();
 
 // -------------------- MIDDLEWARE --------------------
 
-app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 // -------------------- ENDPOINTS --------------------
 

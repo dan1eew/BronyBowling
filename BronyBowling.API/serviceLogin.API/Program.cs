@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using serviceLogin.API.DTOs;
 using serviceLogin.API.Services;
 using System.IdentityModel.Tokens.Jwt;
@@ -36,28 +37,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-        policy
-            .AllowAnyOrigin()          
-            .AllowAnyHeader()
-            .AllowAnyMethod());
-});
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowFrontend", policy =>
+//        policy
+//            .AllowAnyOrigin()          
+//            .AllowAnyHeader()
+//            .AllowAnyMethod());
+//});
 
 var app = builder.Build();
 
 // -------------------- MIDDLEWARE --------------------
 
-app.UseDefaultFiles();
-app.UseStaticFiles();
-app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi(); // Генерация схемы
+    app.MapScalarApiReference(); // Подключение Scalar UI по умолчанию на /scalar/v1
+}
 
 // -------------------- ENDPOINTS --------------------
 

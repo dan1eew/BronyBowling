@@ -3,6 +3,7 @@ using BronyBowling.Shared.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using serviceProfile.API.DTOs;
 using System.Security.Claims;
 
@@ -36,34 +37,34 @@ builder.Services.AddAuthorization();
 
 // SWAGGER
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 
 // CORS 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("Frontend", policy =>
-        policy
-            .WithOrigins(
-                "http://localhost:5173",   
-                "http://localhost:63230",   
-                "http://localhost:5001"  
-            )
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-    );
-});
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("Frontend", policy =>
+//        policy
+//            .WithOrigins(
+//                "http://localhost:5173",   
+//                "http://localhost:63230",   
+//                "http://localhost:5001"  
+//            )
+//            .AllowAnyHeader()
+//            .AllowAnyMethod()
+//    );
+//});
 
 var app = builder.Build();
 
 // ==================== MIDDLEWARE ====================
 
-app.UseCors("Frontend");  
-
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi(); // Генерация схемы
+    app.MapScalarApiReference(); // Подключение Scalar UI по умолчанию на /scalar/v1
+}
 
 // ==================== ENDPOINTS ====================
 
@@ -128,29 +129,52 @@ app.MapPut("/profile", async (
 .RequireAuthorization();
 
 // ---------- DELETE PROFILE ----------
-app.MapDelete("/profile", async (
-    ClaimsPrincipal user,
-    ApplicationDbContext db) =>
-{
-    if (!user.Identity?.IsAuthenticated ?? true)
-        return Results.Unauthorized();
+//app.MapDelete("/profile", async (
+//    ClaimsPrincipal user,
+//    ApplicationDbContext db) =>
+//{
+//    if (!user.Identity?.IsAuthenticated ?? true)
+//        return Results.Unauthorized();
 
-    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-    if (idClaim is null)
-        return Results.Unauthorized();
+//    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+//    if (idClaim is null)
+//        return Results.Unauthorized();
 
-    if (!Guid.TryParse(idClaim.Value, out var userId))
-        return Results.Unauthorized();
+//    if (!Guid.TryParse(idClaim.Value, out var userId))
+//        return Results.Unauthorized();
 
-    var entity = await db.Users.FindAsync(userId);
-    if (entity is null)
-        return Results.NotFound();
+//    var entity = await db.Users.FindAsync(userId);
+//    if (entity is null)
+//        return Results.NotFound();
 
-    db.Users.Remove(entity);
-    await db.SaveChangesAsync();
+//    db.Users.Remove(entity);
+//    await db.SaveChangesAsync();
 
-    return Results.Ok("Профиль удалён");
-})
-.RequireAuthorization();
+//    return Results.Ok("Профиль удалён");
+//})
+//.RequireAuthorization();
+
+//app.MapGet("/profile/bookings", async (
+//    ClaimsPrincipal user,
+//    ApplicationDbContext db) =>
+//{
+//    if (!user.Identity?.IsAuthenticated ?? true)
+//        return Results.Unauthorized();
+
+//    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+//    if (idClaim is null)
+//        return Results.Unauthorized();
+
+//    if (!Guid.TryParse(idClaim.Value, out var userId))
+//        return Results.Unauthorized();
+
+//    var bookings = await db.Bookings
+//        .Where(UserId == userId)
+//        .ToListAsync();
+
+//    return Results.Ok(bookings);
+//})
+//.RequireAuthorization();
+
 
 app.Run("http://localhost:5272");
