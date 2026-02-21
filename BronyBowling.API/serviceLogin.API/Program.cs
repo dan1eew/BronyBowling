@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // -------------------- SERVICES --------------------
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<PasswordHasher>();
 
@@ -94,7 +94,6 @@ app.MapPost("/register", async (
         PasswordHash = hasher.Hash(request.Password!),
         FirstName = request.FirstName!,
         LastName = request.LastName!,
-        MiddleName = request.MiddleName,
         CreatedAt = DateTime.UtcNow
     };
 

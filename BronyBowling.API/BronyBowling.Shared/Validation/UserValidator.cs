@@ -1,4 +1,5 @@
 ﻿namespace BronyBowling.Shared.Validation;
+
 public class UserValidator
 {
     public static List<string> ValidateRegistration(

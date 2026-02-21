@@ -12,9 +12,6 @@
 
         <input id="firstName" placeholder="Имя">
         <input id="lastName" placeholder="Фамилия">
-        <input id="middleName" placeholder="Отчество">
-        <input id="birthDate" type="date">
-        <input id="city" placeholder="Город">
 
         <button onclick="loadProfile()">Загрузить</button>
         <button onclick="saveProfile()">Сохранить</button>
@@ -25,24 +22,49 @@
 
     <script src="app.js"></script>
     <script>
-        if (!getToken()) location.href = "login.html";
 
-        async function loadProfile() {
-            const r = await fetch(`${PROFILE_API}/profile`, {
-                headers: authHeader()
-            });
-
-            if (!r.ok) {
-                showStatus("Ошибка загрузки профиля", true);
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!getToken()) {
+                location.href = "login.html";
                 return;
             }
 
-            const p = await r.json();
-            firstName.value = p.firstName || "";
-            lastName.value = p.lastName || "";
-            middleName.value = p.middleName || "";
-            birthDate.value = p.birthDate?.substring(0, 10) || "";
-            city.value = p.city || "";
+            loadProfile();
+        });
+
+        async function loadProfile() {
+            showStatus("Загрузка профиля...");
+            toggleButtons(true);
+
+            try {
+                const r = await fetch(`${PROFILE_API}/profile`, {
+                    headers: authHeader()
+                });
+
+                if (r.status === 401) {
+                    showStatus("Сессия истекла", true);
+                    logout();
+                    return;
+                }
+
+                if (!r.ok) {
+                    showStatus("Ошибка загрузки профиля", true);
+                    return;
+                }
+
+                const p = await r.json();
+
+                firstName.value = p.firstName ?? "";
+                lastName.value = p.lastName ?? "";
+
+                showStatus("Профиль загружен");
+            }
+            catch {
+                showStatus("Сервер недоступен", true);
+            }
+            finally {
+                toggleButtons(false);
+            }
         }
 
         async function saveProfile() {
@@ -54,10 +76,7 @@
                 },
                 body: JSON.stringify({
                     firstName: firstName.value,
-                    lastName: lastName.value,
-                    middleName: middleName.value || null,
-                    birthDate: birthDate.value || null,
-                    city: city.value || null
+                    lastName: lastName.value
                 })
             });
 
@@ -84,6 +103,5 @@
             logout();
         }
     </script>
-
 </body>
 </html>
