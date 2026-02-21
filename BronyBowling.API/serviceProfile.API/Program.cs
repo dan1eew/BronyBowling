@@ -10,11 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ==================== SERVICES ====================
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    )
-);
+builder.Services.AddDbContext<ApplicationDbContext>(opt =>
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // AUTH (JWT)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -93,10 +90,7 @@ app.MapGet("/profile", async (
     {
         PhoneNumber = entity.PhoneNumber,
         FirstName = entity.FirstName,
-        LastName = entity.LastName,
-        MiddleName = entity.MiddleName,
-        BirthDate = entity.BirthDate,
-        City = entity.City
+        LastName = entity.LastName
     });
 })
 .RequireAuthorization();
@@ -127,9 +121,6 @@ app.MapPut("/profile", async (
 
     entity.FirstName = request.FirstName;
     entity.LastName = request.LastName;
-    entity.MiddleName = request.MiddleName;
-    entity.BirthDate = request.BirthDate;
-    entity.City = request.City;
 
     await db.SaveChangesAsync();
     return Results.Ok();

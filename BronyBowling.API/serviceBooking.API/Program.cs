@@ -4,7 +4,6 @@ using BronyBowling.Shared.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using serviceBooking.API.DTOs;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // -------------------- SERVICES --------------------
 
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
@@ -56,32 +55,27 @@ app.UseSwaggerUI();
 
 // -------------------- ENDPOINTS --------------------
 
-app.MapGet("/lanes", async (ApplicationDbContext db) =>
-{
-    var lanes = await db.BowlingLanes
-        .Where(x => x.IsActive)
-        .OrderBy(x => x.Number)
-        .ToListAsync();
-
-    return Results.Ok(lanes);
-});
-
-app.MapGet("/lanes/available", async (
+app.MapGet("/centers/{centerId}/lanes/available", async (
+    int centerId,
     DateTime start,
     DateTime end,
     ApplicationDbContext db) =>
 {
-    var busyLaneIds = await db.Bookings
-        .Where(b => b.Status != "Cancelled"
-            && start < b.EndTime
-            && end > b.StartTime)
-        .Select(b => b.BowlingLaneId)
-        .ToListAsync();
+    var center = await db.BowlingCenters.FindAsync(centerId);
+    if (center == null || !center.IsActive)
+        return Results.BadRequest("Центр недоступен");
 
-    var freeLanes = await db.BowlingLanes
-        .Where(l => l.IsActive && !busyLaneIds.Contains(l.BowlingLaneId))
-        .OrderBy(l => l.Number)
-        .ToListAsync();
+    var busyLanes = await db.Bookings
+            .Where(b => b.CenterId == centerId
+                    && b.Status != "Cancelled"
+                    && start < b.EndTime
+                    && end > b.StartTime)
+            .Select(b => b.LaneNumber)
+            .ToListAsync();
+
+    var freeLanes = Enumerable.Range(1, center.LanesCount) // id != 1 или 2 в бд
+            .Except(busyLanes)
+            .ToList();
 
     return Results.Ok(freeLanes);
 });
@@ -92,40 +86,49 @@ app.MapPost("/bookings", async (
     ApplicationDbContext db) =>
 {
     if (request.EndTime <= request.StartTime)
-        return Results.BadRequest("Некорректный интервал");
+        return Results.BadRequest("Неправильны интервал времени");
+
+    var center = await db.BowlingCenters.FindAsync(request.CenterId);
+    if (center == null || !center.IsActive)
+        return Results.BadRequest("Центр не работает");
+
+    if (request.LaneNumber <= 0 || request.LaneNumber > center.LanesCount)
+        return Results.BadRequest($"Введите номер дорожки с 1 - {center.LanesCount}");
 
     var hasConflict = await db.Bookings.AnyAsync(b =>
-        b.BowlingLaneId == request.BowlingLaneId &&
+        b.CenterId == request.CenterId &&
+        b.LaneNumber == request.LaneNumber &&
         b.Status != "Cancelled" &&
-        request.StartTime < b.EndTime &&
-        request.EndTime > b.StartTime);
+        request.StartTime < request.EndTime &&
+        request.EndTime > b.StartTime
+    );
 
     if (hasConflict)
         return Results.BadRequest("Дорожка занята");
 
-    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    var bookingCode = Random.Shared.Next(0, 10000).ToString("D4");
 
     var booking = new Booking
     {
-        BookingId = Guid.NewGuid(),
-        BowlingLaneId = request.BowlingLaneId,
+        CenterId = request.CenterId,
+        LaneNumber = request.LaneNumber,
         StartTime = request.StartTime,
         EndTime = request.EndTime,
+        BookingCode = bookingCode,
         CreatedAt = DateTime.UtcNow
     };
 
-    if (0 >= request.BowlingLaneId || request.BowlingLaneId > 20)
-        return Results.BadRequest("Введите корректный номер дорожки от 1 до 20");
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
     if (userId != null)
         booking.UserId = Guid.Parse(userId);
     else
     {
-        if (string.IsNullOrWhiteSpace(request.GuestFullName) ||
-            string.IsNullOrWhiteSpace(request.GuestPhone))
-            return Results.BadRequest("Введите ФИО и телефон");
+        if (string.IsNullOrEmpty(request.GuestName) ||
+           string.IsNullOrEmpty(request.GuestPhone))
+           return Results.BadRequest("Введите имя и телефон");
 
-        booking.GuestFullName = request.GuestFullName;
+        booking.GuestName = request.GuestName;
         booking.GuestPhone = request.GuestPhone;
     }
 
@@ -134,6 +137,19 @@ app.MapPost("/bookings", async (
 
     return Results.Ok(booking);
 })
-.AllowAnonymous();  
+.AllowAnonymous();
+
+app.MapGet("/centers", async (ApplicationDbContext db) =>
+{
+    var centers = await db.BowlingCenters
+        .Where(c => c.IsActive)
+        .Select(c => new CenterResponse(
+            c.CenterId, c.Name, c.City, c.Street,
+            c.House, c.Tariff!.WeekdayPrice, c.Tariff!.WeekendPrice
+         ))
+        .ToListAsync();
+
+    return Results.Ok(centers);
+});
 
 app.Run("http://localhost:5280");

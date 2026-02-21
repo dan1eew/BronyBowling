@@ -4,39 +4,76 @@ using Microsoft.EntityFrameworkCore;
 namespace BronyBowling.Shared.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-           : DbContext(options)
+    : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<BowlingCenter> BowlingCenters => Set<BowlingCenter>();
+    public DbSet<Tariff> Tariffs => Set<Tariff>();
     public DbSet<Booking> Bookings => Set<Booking>();
-    public DbSet<BowlingLane> BowlingLanes => Set<BowlingLane>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
         // ---------- USERS ----------
         b.Entity<User>(e =>
         {
-            e.ToTable("users_table");
+            e.ToTable("users");
             e.HasKey(x => x.UserId);
+            e.Property(x => x.UserId).HasColumnName("user_id");
 
-            e.Property(x => x.PhoneNumber).HasMaxLength(11).IsRequired();
-            e.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
-
-            e.Property(x => x.FirstName).HasMaxLength(50).IsRequired();
-            e.Property(x => x.LastName).HasMaxLength(50).IsRequired();
-            e.Property(x => x.MiddleName).HasMaxLength(50);
-
-            e.Property(x => x.City).HasMaxLength(100);
-            e.Property(x => x.CreatedAt).IsRequired();
+            e.Property(x => x.PhoneNumber).HasColumnName("phone_number").HasMaxLength(11).IsRequired();
+            e.Property(x => x.PasswordHash).HasColumnName("password_hash").IsRequired();
+            e.Property(x => x.FirstName).HasColumnName("first_name").HasMaxLength(100).IsRequired();
+            e.Property(x => x.LastName).HasColumnName("last_name").HasMaxLength(100).IsRequired();
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
         });
 
-        // ---------- BOWLING LANES ----------
-        b.Entity<BowlingLane>(e =>
+        b.Entity<Admin>(e =>
         {
-            e.ToTable("bowling_lanes");
-            e.HasKey(x => x.BowlingLaneId);
+            e.ToTable("admins");
+            e.HasKey(x => x.AdminId);
+            e.Property(x => x.AdminId).HasColumnName("admin_id");
+            e.Property(x => x.Login).HasColumnName("login").IsRequired();
+            e.Property(x => x.PasswordHash).HasColumnName("password_hash").IsRequired();
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+        });
 
-            e.Property(x => x.Number).IsRequired();
-            e.Property(x => x.IsActive).IsRequired();
+        // ---------- CENTERS ----------
+        b.Entity<BowlingCenter>(e =>
+        {
+            e.ToTable("bowling_centers");
+            e.HasKey(x => x.CenterId);
+            e.HasOne(x => x.Tariff)
+             .WithOne(t => t.Center)
+             .HasForeignKey<Tariff>(t => t.CenterId);
+
+            e.Property(x => x.CenterId).HasColumnName("center_id").HasMaxLength(150).IsRequired();
+            e.Property(x => x.Name).HasColumnName("name").HasMaxLength(150).IsRequired();
+            e.Property(x => x.City).HasColumnName("city").HasMaxLength(150).IsRequired();
+            e.Property(x => x.Street).HasColumnName("street").HasMaxLength(150).IsRequired();
+            e.Property(x => x.House).HasColumnName("house").HasMaxLength(20).IsRequired();
+
+            e.Property(x => x.WeekdayOpen).HasColumnName("weekday_open").IsRequired();
+            e.Property(x => x.WeekdayClose).HasColumnName("weekday_close").IsRequired();
+            e.Property(x => x.WeekendOpen).HasColumnName("weekend_open").IsRequired();
+            e.Property(x => x.WeekendClose).HasColumnName("weekend_close").IsRequired();
+
+            e.Property(x => x.LanesCount).HasColumnName("lanes_count").IsRequired();
+            e.Property(x => x.IsActive).HasColumnName("is_active").IsRequired();
+        });
+
+        // ---------- TARIFFS ----------
+        b.Entity<Tariff>(e =>
+        {
+            e.ToTable("tariffs");
+            e.HasKey(x => x.TariffId);
+            e.HasOne(x => x.Center).WithOne(c => c.Tariff).HasForeignKey<Tariff>(x => x.CenterId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            e.Property(x => x.TariffId).HasColumnName("tariff_id");
+            e.Property(x => x.CenterId).HasColumnName("center_id");
+            e.Property(x => x.WeekdayPrice).HasColumnName("weekday_price").HasColumnType("numeric(10,2)");
+            e.Property(x => x.WeekendPrice).HasColumnName("weekend_price").HasColumnType("numeric(10,2)");
         });
 
         // ---------- BOOKINGS ----------
@@ -44,19 +81,43 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             e.ToTable("bookings");
             e.HasKey(x => x.BookingId);
+            e.Property(x => x.BookingId).HasColumnName("booking_id");
+
+            e.HasOne(x => x.Center)
+                .WithMany()
+                .HasForeignKey(x => x.CenterId);
+            e.Property(x => x.CenterId).HasColumnName("center_id");
+
+            e.HasOne(x => x.LaneNumber)
+                .WithMany()
+                .HasForeignKey(x => x.LaneCount);
+            e.Property(x => x.LaneNumber).HasColumnName("lane_number");
+
+            e.Property(x => x.BookingCode)
+                .HasMaxLength(4)
+                .IsRequired();
+            e.Property(x => x.BookingCode).HasColumnName("booking_code");
 
             e.Property(x => x.Status)
-                .HasMaxLength(20)
+                .HasMaxLength(30)
                 .IsRequired();
+            e.Property(x => x.Status).HasColumnName("status");
 
-            e.Property(x => x.CreatedAt)
-                .IsRequired();
 
-            e.HasOne(x => x.Lane)
+            e.HasOne(x => x.User)
                 .WithMany()
-                .HasForeignKey(x => x.BowlingLaneId)
-                .HasPrincipalKey(x => x.BowlingLaneId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.Property(x => x.UserId).HasColumnName("user_id");
         });
+
+        //// ---------- PAYMENTS ----------
+        //b.Entity<Payment>(e =>
+        //{
+        //    e.ToTable("payments");
+        //    e.HasKey(x => x.PaymentId);
+
+        //    e.Property(x => x.Amount).HasColumnType("numeric(10,2)");
+        //});
     }
 }

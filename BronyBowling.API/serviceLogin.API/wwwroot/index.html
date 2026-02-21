@@ -18,9 +18,72 @@
     </header>
 
     <div class="container">
-        <h2>Главная страница</h2>
-        <p>Тестовый интерфейс системы бронирования дорожек.</p>
+        <h2>Боулинг центры</h2>
+
+        <div id="centersContainer" class="centers-grid">
+            Загрузка центров...
+        </div>
+
+        <div id="status"></div>
     </div>
+
+    <script src="app.js"></script>
+    <script>
+        const centersContainer = document.getElementById("centersContainer");
+
+        loadCenters();
+
+        async function loadCenters() {
+            try {
+                const r = await fetch(`${BOOKING_API}/centers`);
+
+                if (!r.ok) {
+                    centersContainer.innerHTML = "";
+                    showStatus("Ошибка загрузки центров", true);
+                    return;
+                }
+
+                const centers = await r.json();
+
+                if (!centers.length) {
+                    centersContainer.innerHTML = "<p>Нет доступных центров</p>";
+                    return;
+                }
+
+                centersContainer.innerHTML = "";
+
+                centers.forEach(c => {
+                    const card = document.createElement("div");
+                    card.className = "center-card";
+
+                    card.innerHTML = `
+                        <div class="center-name">${c.name}</div>
+                        <div class="center-address">${c.city}, ${c.street} ${c.house}</div>
+
+                        <div class="center-prices">
+                            <div>Будни: <b>${c.weekdayPrice} ₽/час</b></div>
+                            <div>Выходные: <b>${c.weekendPrice} ₽/час</b></div>
+                        </div>
+
+                        <button onclick="goToBooking(${c.centerId})">
+                            Перейти к бронированию
+                        </button>
+                    `;
+
+                    centersContainer.appendChild(card);
+                });
+
+            } catch (e) {
+                centersContainer.innerHTML = "";
+                showStatus("Сервер недоступен", true);
+            }
+        }
+
+        function goToBooking(centerId) {
+            localStorage.setItem("selectedCenterId", centerId);
+            location.href = "booking.html";
+        }
+    </script>
 
 </body>
 </html>

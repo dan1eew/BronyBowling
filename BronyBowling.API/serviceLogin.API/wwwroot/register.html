@@ -14,7 +14,6 @@
         <input id="password" type="password" placeholder="Пароль">
         <input id="lastName" placeholder="Фамилия">
         <input id="firstName" placeholder="Имя">
-        <input id="middleName" placeholder="Отчество (необязательно)">
 
         <button onclick="register()">Создать аккаунт</button>
 
@@ -28,8 +27,7 @@
                 phoneNumber: phone.value,
                 password: password.value,
                 firstName: firstName.value,
-                lastName: lastName.value,
-                middleName: middleName.value || null
+                lastName: lastName.value
             };
 
             const r = await fetch(`${AUTH_API}/register`, {
@@ -47,6 +45,5 @@
             showStatus("Регистрация успешна");
         }
     </script>
-
 </body>
 </html>
