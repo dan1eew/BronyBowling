@@ -1,17 +1,9 @@
-﻿namespace BronyBowling.Shared.Models;
-
-public class Payment
+﻿public class Payment
 {
-    public int PaymentId { get; set; }
-
-    public string PhoneNumber { get; set; } = null!;
+    public Guid PaymentId { get; set; }
+    public Guid BookingId { get; set; }
     public decimal Amount { get; set; }
-
-    public DateTime StartTime { get; set; }
-    public DateTime EndTime { get; set; }
-
-    public string CenterName { get; set; } = null!;
-    public int LaneNumber { get; set; }
-
+    public string Status { get; set; } = "Pending";
     public DateTime CreatedAt { get; set; }
+    public DateTime? PaidAt { get; set; }
 }
