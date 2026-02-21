@@ -47,7 +47,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
              .WithOne(t => t.Center)
              .HasForeignKey<Tariff>(t => t.CenterId);
 
-            e.Property(x => x.CenterId).HasColumnName("center_id").HasMaxLength(150).IsRequired();
+            e.Property(x => x.CenterId).HasColumnName("center_id").IsRequired();
             e.Property(x => x.Name).HasColumnName("name").HasMaxLength(150).IsRequired();
             e.Property(x => x.City).HasColumnName("city").HasMaxLength(150).IsRequired();
             e.Property(x => x.Street).HasColumnName("street").HasMaxLength(150).IsRequired();
@@ -76,39 +76,64 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.Property(x => x.WeekendPrice).HasColumnName("weekend_price").HasColumnType("numeric(10,2)");
         });
 
-        // ---------- BOOKINGS ----------
         b.Entity<Booking>(e =>
         {
             e.ToTable("bookings");
             e.HasKey(x => x.BookingId);
-            e.Property(x => x.BookingId).HasColumnName("booking_id");
+
+            e.Property(x => x.BookingId)
+                .HasColumnName("booking_id");
+
+            e.Property(x => x.CenterId)
+                .HasColumnName("center_id")
+                .IsRequired();
+
+            e.Property(x => x.LaneNumber)
+                .HasColumnName("lane_number")
+                .IsRequired();
+
+            e.Property(x => x.StartTime)
+                .HasColumnName("start_time")
+                .IsRequired();
+
+            e.Property(x => x.EndTime)
+                .HasColumnName("end_time")
+                .IsRequired();
+
+            e.Property(x => x.GuestName)
+                .HasColumnName("guest_name")
+                .HasMaxLength(150);
+
+            e.Property(x => x.GuestPhone)
+                .HasColumnName("guest_phone")
+                .HasMaxLength(20);
+
+            e.Property(x => x.BookingCode)
+                .HasColumnName("booking_code")
+                .HasMaxLength(4)
+                .IsRequired();
+
+            e.Property(x => x.Status)
+                .HasColumnName("status")
+                .HasMaxLength(30)
+                .IsRequired();
+
+            e.Property(x => x.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            e.Property(x => x.UserId)
+                .HasColumnName("user_id");
 
             e.HasOne(x => x.Center)
                 .WithMany()
-                .HasForeignKey(x => x.CenterId);
-            e.Property(x => x.CenterId).HasColumnName("center_id");
-
-            e.HasOne(x => x.LaneNumber)
-                .WithMany()
-                .HasForeignKey(x => x.LaneCount);
-            e.Property(x => x.LaneNumber).HasColumnName("lane_number");
-
-            e.Property(x => x.BookingCode)
-                .HasMaxLength(4)
-                .IsRequired();
-            e.Property(x => x.BookingCode).HasColumnName("booking_code");
-
-            e.Property(x => x.Status)
-                .HasMaxLength(30)
-                .IsRequired();
-            e.Property(x => x.Status).HasColumnName("status");
-
+                .HasForeignKey(x => x.CenterId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             e.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
-            e.Property(x => x.UserId).HasColumnName("user_id");
         });
 
         //// ---------- PAYMENTS ----------
