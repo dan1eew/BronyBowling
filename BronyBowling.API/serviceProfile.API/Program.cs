@@ -35,7 +35,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// SWAGGER
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
@@ -129,52 +128,103 @@ app.MapPut("/profile", async (
 .RequireAuthorization();
 
 // ---------- DELETE PROFILE ----------
-//app.MapDelete("/profile", async (
-//    ClaimsPrincipal user,
-//    ApplicationDbContext db) =>
-//{
-//    if (!user.Identity?.IsAuthenticated ?? true)
-//        return Results.Unauthorized();
+app.MapDelete("/profile", async (
+    ClaimsPrincipal user,
+    ApplicationDbContext db) =>
+{
+    if (!user.Identity?.IsAuthenticated ?? true)
+        return Results.Unauthorized();
 
-//    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-//    if (idClaim is null)
-//        return Results.Unauthorized();
+    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+    if (idClaim is null)
+        return Results.Unauthorized();
 
-//    if (!Guid.TryParse(idClaim.Value, out var userId))
-//        return Results.Unauthorized();
+    if (!Guid.TryParse(idClaim.Value, out var userId))
+        return Results.Unauthorized();
 
-//    var entity = await db.Users.FindAsync(userId);
-//    if (entity is null)
-//        return Results.NotFound();
+    var entity = await db.Users.FindAsync(userId);
+    if (entity is null)
+        return Results.NotFound();
 
-//    db.Users.Remove(entity);
-//    await db.SaveChangesAsync();
+    db.Users.Remove(entity);
+    await db.SaveChangesAsync();
 
-//    return Results.Ok("Профиль удалён");
-//})
-//.RequireAuthorization();
+    return Results.Ok("Профиль удалён");
+})
+.RequireAuthorization();
 
-//app.MapGet("/profile/bookings", async (
-//    ClaimsPrincipal user,
-//    ApplicationDbContext db) =>
-//{
-//    if (!user.Identity?.IsAuthenticated ?? true)
-//        return Results.Unauthorized();
+app.MapGet("/profile/bookings", async (
+    ClaimsPrincipal user,
+    ApplicationDbContext db) =>
+{
+    if (!user.Identity?.IsAuthenticated ?? true)
+        return Results.Unauthorized();
 
-//    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-//    if (idClaim is null)
-//        return Results.Unauthorized();
+    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+    if (idClaim is null)
+        return Results.Unauthorized();
 
-//    if (!Guid.TryParse(idClaim.Value, out var userId))
-//        return Results.Unauthorized();
+    if (!Guid.TryParse(idClaim.Value, out var userId))
+        return Results.Unauthorized();
 
-//    var bookings = await db.Bookings
-//        .Where(UserId == userId)
-//        .ToListAsync();
+    var bookings = await db.Bookings
+        .Where(b => b.UserId == userId)
+        .Select(b => new UserBookings(
+            b.Center.Name, 
+            b.LaneNumber,
+            b.StartTime,
+            b.EndTime,
+            b.Status
+            ))
+        .OrderByDescending(b => b.StartTime)
+        .ToListAsync();
 
-//    return Results.Ok(bookings);
-//})
-//.RequireAuthorization();
+    return Results.Ok(bookings);
+})
+.RequireAuthorization();
 
+app.MapPost("/bookings/{id:int}/cancel", async (
+    int id,
+    ClaimsPrincipal user,
+    ApplicationDbContext db) =>
+{
+    if (!user.Identity?.IsAuthenticated ?? true)
+        return Results.Unauthorized();
+
+    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+    if (idClaim is null || !Guid.TryParse(idClaim.Value, out var userId))
+        return Results.Unauthorized();
+
+    var booking = await db.Bookings.FindAsync(id);
+    if (booking is null)
+        return Results.NotFound();
+
+    // Проверка владельца
+    if (booking.UserId != userId)
+        return Results.Forbid();
+
+    // Проверка статуса
+    if (booking.Status == "Cancelled")
+        return Results.BadRequest(new { error = "Бронь уже отменена" });
+
+    if (booking.Status == "Paid")
+        return Results.BadRequest(new { error = "Оплаченная бронь не может быть отменена" });
+
+    // Проверка времени
+    var minutesBeforeStart = (booking.StartTime - DateTime.UtcNow).TotalMinutes;
+
+    if (minutesBeforeStart < 30)
+        return Results.BadRequest(new
+        {
+            error = "Отмена возможна не позднее чем за 30 минут до начала"
+        });
+
+    booking.Status = "Cancelled";
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { message = "Бронь отменена" });
+})
+.RequireAuthorization();
 
 app.Run("http://localhost:5272");

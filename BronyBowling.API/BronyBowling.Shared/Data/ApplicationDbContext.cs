@@ -136,13 +136,32 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        //// ---------- PAYMENTS ----------
-        //b.Entity<Payment>(e =>
-        //{
-        //    e.ToTable("payments");
-        //    e.HasKey(x => x.PaymentId);
+        // ---------- PAYMENTS ----------
+        b.Entity<Payment>(e =>
+        {
+            e.ToTable("payments");
 
-        //    e.Property(x => x.Amount).HasColumnType("numeric(10,2)");
-        //});
+            e.HasKey(x => x.PaymentId);
+
+            e.Property(x => x.PaymentId)
+                .HasColumnName("payment_id");
+
+            e.Property(x => x.BookingId)
+                .HasColumnName("booking_id");
+
+            e.Property(x => x.Amount)
+                .HasColumnName("amount")
+                .HasColumnType("numeric(10,2)");
+
+            e.Property(x => x.Status)
+                .HasColumnName("status")
+                .HasMaxLength(30);
+
+            e.Property(x => x.CreatedAt)
+                .HasColumnName("created_at");
+
+            e.Property(x => x.PaidAt)
+                .HasColumnName("paid_at");
+        });
     }
 }

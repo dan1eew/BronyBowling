@@ -56,8 +56,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi(); // Генерация схемы
-    app.MapScalarApiReference(); // Подключение Scalar UI по умолчанию на /scalar/v1
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 // -------------------- ENDPOINTS --------------------
